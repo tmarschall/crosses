@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -q blugpu
+#PBS -l nodes=1:gpus=1
+#PBS -l walltime=48:00:00
+#PBS -o spherocyl_box.log
+#PBS -N spherocyl_box
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+echo Running on host `hostname`
+echo Time is `date`
+echo PBS_NODEFILE is $PBS_NODEFILE
+
+~/spherocyls/exe/spherocyl_box r /scratch/tmarscha/data/spherocyl/test/ 512 1e-4 0.025 5.0 0.01 0.00001 0.1 0.7 2.0 0.5 > spherocyl_strain.out

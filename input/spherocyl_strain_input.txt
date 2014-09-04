@@ -1,0 +1,12 @@
+r
+/scratch/tmarscha/data/spherocyl/test2/
+512
+1e-4
+0.025
+5.0
+0.01
+1e-5
+0.1
+0.6
+2.0
+0.5

@@ -1,0 +1,13 @@
+Arguments (always necessary):
+1. Data file to load positions ('r' for random)
+2. Directory to save data in
+3. Number of particles
+4. Strain rate
+5. Integration step size
+6. Save rate (strain interval) for position data
+7. Save rate for energy & stress tensor data
+8. Contact detection cell padding
+Necessary to start with a new random configuration:
+9. Packing fraction
+10. Crossinder half-shaft length
+11. Crossinder radius

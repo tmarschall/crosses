@@ -1,0 +1,29 @@
+The programs spherocyl_strain and spherocyl_resize can both take user input through the command line arguments or using an input file and input redirection ( < ), ie:
+
+./spherocyl_strain < input_file.txt
+
+where input_file.txt is a list of arguments, each on it's own line
+
+The order of the arguments for spherocyl_strain are:
+
+1) A position data file to load (or "r" to start from a new random configuration (text)
+2) The output directory to save data (text)
+3) The number of spherocylinders (integer)
+4) The strain rate (float)
+5) The integration step size (float)
+6) The length of the run in terms of the strain parameter gamma (float)
+7) How often to save position data files (in terms of gamma) (float)
+8) How often to save the stress tensor components and energy (float)
+9) A padding number which determines how often new neighbor lists need to be generated (too small or too big and the program may run slow, I usually use around 0.1)
+10) The packing fraction (only necessary when using a random configuration)
+11) The spherocylinder half-shaft length (only necessary when using a random configuration)
+12) The spherocylinder radius (only necessary when using a random configuration)
+
+
+The arguments for spherocyl_resize are the same except:
+
+4) A resize rate instead of strain rate
+6) The final packing fraction
+10) This is the initial packing fraction when using a random file
+
+

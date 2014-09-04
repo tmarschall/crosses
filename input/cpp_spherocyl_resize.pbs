@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -q standard
+#PBS -l nodes=1
+#PBS -l walltime=120:00:00
+#PBS -o spherocyl_resize.log
+#PBS -N sp_resize_p80n256
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+echo Running on host `hostname`
+echo Time is `date`
+echo PBS_NODEFILE is $PBS_NODEFILE
+
+~/spherocyls/exe/cpp_spherocyl_resize < ~/spherocyls/input/spherocyl_resize_input.txt > /scratch/tmarscha/data/spherocyls/output/sp_resize_p80n256.out

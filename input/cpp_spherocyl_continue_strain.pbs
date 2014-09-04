@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -q standard
+#PBS -l nodes=1
+#PBS -l walltime=120:00:00
+#PBS -o spherocyl_strain.log
+#PBS -N sp_str_p80n256dg1e-4
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+echo Running on host `hostname`
+echo Time is `date`
+echo PBS_NODEFILE is $PBS_NODEFILE
+
+~/spherocyls/exe/cpp_spherocyl_strain < ~/spherocyls/input/spherocyl_continue_strain_input.txt > /scratch/tmarscha/data/spherocyls/output/sp_str_p80n256dg1e-4.out

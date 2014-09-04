@@ -1,0 +1,8 @@
+**.out
+**.log
+**.o
+exe/*
+!exe/.gitkeep
+**~
+src/cpp/*
+

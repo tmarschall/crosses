@@ -1,0 +1,9 @@
+/scratch/tmarscha/data/spherocyls/p80/n256/dg1e-4/r1/sp0000000000.dat
+/scratch/tmarscha/data/spherocyls/p80/n256/dg1e-4/r1/
+256
+1e-4
+0.05
+40.0
+0.01
+1e-5
+0.1
