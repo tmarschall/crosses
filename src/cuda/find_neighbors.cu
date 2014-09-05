@@ -428,9 +428,9 @@ __global__ void find_cells_nomax(int nCross, double dCellW, double dCellH,
 }
 
 __global__ void reorder_part(int nCross, double *pdTempX, double *pdTempY, double *pdTempR,
-					double *pdTempAx,  double *pdTempAy, int *pnTempInitID, double *pdX,
-					double *pdY, double *pdR, double *pdAx, double *pdAy, int *pnInitID,
-					int *pnMemID, int *pnCellID, int *pnCellSID)
+			     double *pdTempAx,  double *pdTempAy, int *pnTempInitID, double *pdX,
+			     double *pdY, double *pdR, double *pdAx, double *pdAy, int *pnInitID,
+			     int *pnMemID, int *pnCellID, int *pnCellSID)
 {
   int nPID = threadIdx.x + blockIdx.x * blockDim.x;
   int nThreads = blockDim.x * gridDim.x;
@@ -489,7 +489,7 @@ void Cross_Box::reorder_particles()
   cudaMalloc((void **) &d_pnCellSID, sizeof(int) * m_nCells);
   cudaMalloc((void **) &d_pdTempR, sizeof(double) * m_nCross);
   cudaMalloc((void **) &d_pdTempAx, sizeof(double) * m_nCross);
-  cudaMalloc((void **) &d_pdTempAy, sizeof(double) * m_nCross)
+  cudaMalloc((void **) &d_pdTempAy, sizeof(double) * m_nCross);
   cudaMalloc((void **) &d_pnTempInitID, sizeof(int) * m_nCross);
   cudaMemcpy(d_pdTempX, d_pdX, sizeof(double) * m_nCross, cudaMemcpyDeviceToDevice);
   cudaMemcpy(d_pdTempY, d_pdY, sizeof(double) * m_nCross, cudaMemcpyDeviceToDevice);
@@ -515,8 +515,8 @@ void Cross_Box::reorder_particles()
 
   //reorder particles based on cell ID (first by Y direction)
   reorder_part <<<m_nGridSize, m_nBlockSize>>>
-    (m_nCross, d_pdTempX, d_pdTempY, d_pdTempR, d_pdTempA, d_pnTempInitID,
-     d_pdX, d_pdY, d_pdR, d_pdA, d_pnInitID, d_pnMemID, d_pnCellID, d_pnCellSID);
+    (m_nCross, d_pdTempX, d_pdTempY, d_pdTempR, d_pdTempAx, d_pdTempAy, d_pnTempInitID,
+     d_pdX, d_pdY, d_pdR, d_pdAx, d_pdAy, d_pnInitID, d_pnMemID, d_pnCellID, d_pnCellSID);
   cudaThreadSynchronize();
   checkCudaError("Reordering particles: changing order");
 

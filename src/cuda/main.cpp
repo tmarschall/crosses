@@ -88,13 +88,15 @@ int main(int argc, char* argv[])
     dPosSaveRate = dStrainRate;
 
   double dL;
-  double *dX = new double[nCross];
-  double *dY = new double[nCross];
-  double *dPhi = new double[nCross];
-  double *dRad = new double[nCross];
-  double *dA = new double[nCross];
-  double dRMax = 0.0;
-  double dAMax = 0.0;
+  double *pdX = new double[nCross];
+  double *pdY = new double[nCross];
+  double *pdPhi = new double[nCross];
+  double *pdR = new double[nCross];
+  double *pdAx = new double[nCross];
+  double *pdAy = new double[nCross];
+  double dR = 0.0;
+  double dAx = 0.0;
+  double dAy = 0.0;
   double dGamma;
   double dTotalGamma;
   long unsigned int nTime = 0;
@@ -103,15 +105,15 @@ int main(int argc, char* argv[])
   {
     double dPacking = float_input(argc, argv, ++argn, "Packing Fraction");
     cout << dPacking << endl;
-    double dA = float_input(argc, argv, ++argn, "Half-shaft length");
-    cout << dA << endl;
-    double dR = float_input(argc, argv, ++argn, "Radius");
+    dR = float_input(argc, argv, ++argn, "Radius");
     cout << dR << endl;
-    double dArea = nCross*(4*dA + D_PI * dR)*dR;
+    dAx = float_input(argc, argv, ++argn, "Half-shaft length (long axis)");
+    cout << dAx << endl;
+    dAy = float_input(argc, argv, ++argn, "Half-shaft length (short axis)");
+    cout << dAy << endl;
+    double dArea = nCross*(4*dAx + 4*dAy + 2*D_PI*dR - 4*dR)*dR;
     dL = sqrt(dArea / dPacking);
     cout << "Box length L: " << dL << endl;
-    dRMax = dR;
-    dAMax = dA;
     /*
     srand(time(0) + static_cast<int>(1000*dPacking));
     for (int p = 0; p < nCross; p++)
@@ -135,11 +137,12 @@ int main(int argc, char* argv[])
     	cout << "Warning: Number of particles in data file may not match requested number" << endl;
     	cerr << "Warning: Number of particles in data file may not match requested number" << endl;
     }
-    cData.getColumn(dX, 0);
-    cData.getColumn(dY, 1);
-    cData.getColumn(dPhi, 2);
-    cData.getColumn(dRad, 3);
-    cData.getColumn(dA, 4);
+    cData.getColumn(pdX, 0);
+    cData.getColumn(pdY, 1);
+    cData.getColumn(pdPhi, 2);
+    cData.getColumn(pdR, 3);
+    cData.getColumn(pdAx, 4);
+    cData.getColumn(pdAy, 5);
     dL = cData.getHeadFloat(1);
     dPacking = cData.getHeadFloat(2);
     dGamma = cData.getHeadFloat(3);
@@ -155,10 +158,6 @@ int main(int argc, char* argv[])
     string strNum = strFile.substr(nFileLen-14, 10);
     nTime = atoi(strNum.c_str());
     cout << "Time: " << strNum << " " << nTime << endl;
-    for (int p = 0; p < nCross; p++) {
-    	if (dA[p] > dAMax) { dAMax = dA[p]; }
-    	if (dRad[p] > dRMax) { dRMax = dRad[p]; }
-    }
   }
   
   int tStart = time(0);
@@ -166,11 +165,11 @@ int main(int argc, char* argv[])
   Cross_Box *cCross;
   if (strFile == "r") {
     cout << "Initializing box of length " << dL << " with " << nCross << " particles.";
-    cCross = new Cross_Box(nCross, dL, dRMax, dAMax, dDR);
+    cCross = new Cross_Box(nCross, dL, dR, dAx, dAy, dDR);
   }
   else {
     cout << "Initializing box from file of length " << dL << " with " << nCross << " particles.";
-    cCross = new Cross_Box(nCross, dL, dX, dY, dPhi, dRad, dA, dDR);
+    cCross = new Cross_Box(nCross, dL, pdX, pdY, pdPhi, pdR, pdAx, pdAy, dDR);
   }
   cout << "Cross initialized" << endl;
 
@@ -215,8 +214,8 @@ int main(int argc, char* argv[])
   int tStop = time(0);
   cout << "\nRun Time: " << tStop - tStart << endl;
 
-  delete[] dX; delete[] dY; delete[] dPhi; 
-  delete[] dRad; delete[] dA;
+  delete[] pdX; delete[] pdY; delete[] pdPhi; 
+  delete[] pdR; delete[] pdAx; delete[] pdAy;
 
   return 0;
 }

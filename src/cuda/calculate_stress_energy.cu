@@ -14,6 +14,7 @@
 
 
 using namespace std;
+const double D_PI = 3.14159265358979;
 
 
 ////////////////////////////////////////////////////////
@@ -45,7 +46,7 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
 
   double *dFx = sData+4*offset;
   double *dFy = sData+4*offset+blockDim.x;
-  double *dFy = sData+4*offset+2*blockDim.x;
+  double *dFt = sData+4*offset+2*blockDim.x;
 
   while (nPID < nCross) {
 	  dFx[thid] = 0.0;

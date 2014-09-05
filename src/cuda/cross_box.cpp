@@ -105,7 +105,7 @@ void Cross_Box::set_kernel_configs()
    		   m_nSM_CalcSE = 4*264*sizeof(double); // Size of shared memory per block
    		   break;
    	   default:
-   		   m_nGridSize = m_nCrosses/512;
+   		   m_nGridSize = m_nCross / 512;
    		   m_nBlockSize = 512;
    		   m_nSM_CalcF = 3*512*sizeof(double);
    		   m_nSM_CalcSE = 4*520*sizeof(double);
@@ -217,8 +217,8 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
   m_dEpsilon = dEpsilon;
   m_nMaxPPC = nMaxPPC;
   m_nMaxNbrs = nMaxNbrs;
-  m_dRMax = dRMax;
-  m_dAMax = dAMax;
+  m_dRMax = dR;
+  m_dAMax = dAx;
   m_nDeviceMem = 0;
 
   // This allocates the coordinate data as page-locked memory, which
@@ -263,7 +263,7 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
 }
 // Create class with coordinate arrays provided
 Cross_Box::Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi, double *pdR, double *pdAx,
-					 double *pdAy, double dEpsilon, int nMaxPPC, int nMaxNbrs, Potential ePotential)
+		     double *pdAy, double dEpsilon, int nMaxPPC, int nMaxNbrs, Potential ePotential)
 {
   assert(nCross > 0);
   m_nCross = nCross;
@@ -741,10 +741,10 @@ void Cross_Box::place_random_cross(int seed, bool bRandAngle)
       else
     	  h_pdPhi[p] = 0;
 
-      bContact = check_for_crosses(p);
+      bContact = check_for_intersection(p);
       nTries += 1;
     }
-    cout << "Crossinder " << p << " placed in " << nTries << " attempts." << endl;
+    cout << "Cross " << p << " placed in " << nTries << " attempts." << endl;
   }
   cudaMemcpyAsync(d_pdX, h_pdX, sizeof(double)*m_nCross, cudaMemcpyHostToDevice);
   cudaMemcpyAsync(d_pdY, h_pdY, sizeof(double)*m_nCross, cudaMemcpyHostToDevice);

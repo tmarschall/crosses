@@ -40,25 +40,34 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
         sData[3*blockDim.x + i*offset + thid] = 0.0;
     __syncthreads();  // synchronizes every thread in the block before going on
   }
+  //if (thid == 0) {
+  //  printf("Shared data allocated and zeroed on block %d\n", blockIdx.x);
+  //}
     
   double *dFx = sData;
   double *dFy = sData+blockDim.x;
-  double *dFy = sData+2*blockDim.x;
+  double *dFt = sData+2*blockDim.x;
 
   while (nPID < nCross) {
-  	  dFx[thid] = 0.0;
-  	  dFy[thid] = 0.0;
-  	  dFt[thid] = 0.0;
+      dFx[thid] = 0.0;
+      dFy[thid] = 0.0;
+      dFt[thid] = 0.0;
+      //if (thid == 0) {
+      //	printf("Forces reset on block %d\n", blockIdx.x);
+      //}
       
       double dX = pdX[nPID];
       double dY = pdY[nPID];
       double dPhi = pdPhi[nPID] + spi*D_PI/2;
       double dR = pdR[nPID];
-      double dA = pdAx[nPID] ? spi == 0 : pAy[nPID];
+      double dA = pdAx[nPID] ? spi == 0 : pdAy[nPID];
       
       int nNbrs = pnNPP[nPID];
       for (int p = 0; p < nNbrs; p++) {
     	  int nAdjPID = pnNbrList[nPID + p * nCross];
+	  //if (spi == 0 && spj == 0) {
+	  //  printf("nPID: %d nAdjPID: %d\n", nPID, nAdjPID);
+	  //}
     	  double dAdjX = pdX[nAdjPID];
     	  double dAdjY = pdY[nAdjPID];
 	  
@@ -67,6 +76,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dPhiB = pdPhi[nAdjPID] + spj*D_PI/2;
     	  double dSigma = dR + pdR[nAdjPID];
     	  double dB = pdAx[nAdjPID] ? spj == 0 : pdAy[nAdjPID];
+	  
     	  // Make sure we take the closest distance considering boundary conditions
     	  dDeltaX += dL * ((dDeltaX < -0.5*dL) - (dDeltaX > 0.5*dL));
     	  dDeltaY += dL * ((dDeltaY < -0.5*dL) - (dDeltaY > 0.5*dL));
@@ -97,35 +107,38 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dDy = dDeltaY + s*nyA - t*nyB;
     	  double dDSqr = dDx * dDx + dDy * dDy;
     	  if (dDSqr < dSigma*dSigma) {
-    		  double dDij = sqrt(dDSqr);
-    		  double dDVij;
-    		  double dAlpha;
-    		  if (ePot == HARMONIC) {
-    			  dDVij = (1.0 - dDij / dSigma) / dSigma;
-    			  dAlpha = 2.0;
-    		  }
-    		  else if (ePot == HERTZIAN) {
-    			  dDVij = (1.0 - dDij / dSigma) * sqrt(1.0 - dDij / dSigma) / dSigma;
-    			  dAlpha = 2.5;
-    		  }
-    		  double dPfx = dDx * dDVij / dDij;
-    		  double dPfy = dDy * dDVij / dDij;
-    		  dFx[thid] += dPfx;
-    		  dFy[thid] += dPfy;
-    		  //  Find the point of contact (with respect to the center of the cross)
-    		  //double dCx = s*nxA - 0.5*dDx;
-    		  //double dCy = s*nyA - 0.5*dDy;
-    		  double dCx = s*nxA;
-    		  double dCy = s*nyA;
-    		  dFt[thid] += dCx * dPfy - dCy * dPfx;
-    		  if (bCalcStress) {
-    			  if (nAdjPID > nPID) {
-    				  sData[3*blockDim.x + thid] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
-    				  sData[3*blockDim.x + thid + offset] += dPfx * dDx / (dL * dL);
-    				  sData[3*blockDim.x + thid + 2*offset] += dPfy * dDy / (dL * dL);
-    				  sData[3*blockDim.x + thid + 3*offset] += dPfx * dDy / (dL * dL);
-    			  }
-    		  }
+	    double dDij = sqrt(dDSqr);
+	    double dDVij;
+	    double dAlpha;
+	    if (ePot == HARMONIC) {
+	      dDVij = (1.0 - dDij / dSigma) / dSigma;
+	      dAlpha = 2.0;
+	    }
+	    else if (ePot == HERTZIAN) {
+	      dDVij = (1.0 - dDij / dSigma) * sqrt(1.0 - dDij / dSigma) / dSigma;
+	      dAlpha = 2.5;
+	    }
+	    double dPfx = dDx * dDVij / dDij;
+	    double dPfy = dDy * dDVij / dDij;
+	    dFx[thid] += dPfx;
+	    dFy[thid] += dPfy;
+	    //  Find the point of contact (with respect to the center of the cross)
+	    //double dCx = s*nxA - 0.5*dDx;
+	    //double dCy = s*nyA - 0.5*dDy;
+	    double dCx = s*nxA;
+	    double dCy = s*nyA;
+	    dFt[thid] += dCx * dPfy - dCy * dPfx;
+	    if (bCalcStress) {
+	      if (nAdjPID > nPID) {
+		sData[3*blockDim.x + thid] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
+		sData[3*blockDim.x + thid + offset] += dPfx * dDx / (dL * dL);
+		sData[3*blockDim.x + thid + 2*offset] += dPfy * dDy / (dL * dL);
+		sData[3*blockDim.x + thid + 3*offset] += dPfx * dDy / (dL * dL);
+		//if (thid == 0) {
+		//  printf("Stresses updated on block %d\n", blockIdx.x);
+		//}
+	      }
+ 	    }
     	  }
       }
       if (spi == 0) {
@@ -166,28 +179,28 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	stride /= 2;
     	__syncthreads();
     	while (stride > 8) {
-    		if (thid < 4 * stride) {
-    			base = 3*blockDim.x + thid % stride + offset * (thid / stride);
-    			sData[base] += sData[base + stride];
-    		}
-    		stride /= 2;
-    		__syncthreads();
+	  if (thid < 4 * stride) {
+	    base = 3*blockDim.x + thid % stride + offset * (thid / stride);
+	    sData[base] += sData[base + stride];
+	  }
+	  stride /= 2;
+	  __syncthreads();
     	}
     	if (thid < 32) { //unroll end of loop
-    		base = 3*blockDim.x + thid % 8 + offset * (thid / 8);
-    		sData[base] += sData[base + 8];
-    		if (thid < 16) {
-    			base = 3*blockDim.x + thid % 4 + offset * (thid / 4);
-    			sData[base] += sData[base + 4];
-    			if (thid < 8) {
-    				base = 3*blockDim.x + thid % 2 + offset * (thid / 2);
-    				sData[base] += sData[base + 2];
-    				if (thid < 4) {
-    					sData[3*blockDim.x + thid * offset] += sData[3*blockDim.x + thid * offset + 1];
-    					float tot = atomicAdd(pfSE+thid, (float)sData[3*blockDim.x + thid*offset]);
-    				}
-    			}
-    		}
+	  base = 3*blockDim.x + thid % 8 + offset * (thid / 8);
+	  sData[base] += sData[base + 8];
+	  if (thid < 16) {
+	    base = 3*blockDim.x + thid % 4 + offset * (thid / 4);
+	    sData[base] += sData[base + 4];
+	    if (thid < 8) {
+	      base = 3*blockDim.x + thid % 2 + offset * (thid / 2);
+	      sData[base] += sData[base + 2];
+	      if (thid < 4) {
+		sData[3*blockDim.x + thid * offset] += sData[3*blockDim.x + thid * offset + 1];
+		float tot = atomicAdd(pfSE+thid, (float)sData[3*blockDim.x + thid*offset]);
+	      }
+	    }
+	  }
     	}
     }
 }
@@ -208,23 +221,27 @@ __global__ void heun_corr(int nCross, int *pnNPP,int *pnNbrList,double dL, doubl
   int spi = (thid/2) % 2;
   int spj = thid % 2;
   int nPID = (thid + blockIdx.x * blockDim.x)/4;
+  //printf("blockId: %d thid: %d nPID: %d spi: %d spj: %d\n", blockIdx.x, thid, nPID, spi, spj);
   int nThreads = blockDim.x * gridDim.x;
   // Declare shared memory pointer, the size is passed at the kernel launch
   extern __shared__ double sData[];
   double *dFx = sData;
   double *dFy = sData+blockDim.x;
-  double *dFy = sData+2*blockDim.x;
+  double *dFt = sData+2*blockDim.x;
 
   while (nPID < nCross) {
-	  dFx[thid] = 0.0;
-	  dFy[thid] = 0.0;
-	  dFt[thid] = 0.0;
+      dFx[thid] = 0.0;
+      dFy[thid] = 0.0;
+      dFt[thid] = 0.0;
+      //if (thid == 0) {
+      //printf("Forces reset on block %d\n", blockIdx.x);
+      //}
       
       double dX = pdTempX[nPID];
       double dY = pdTempY[nPID];
       double dPhi = pdTempPhi[nPID] + spi*D_PI/2;
       double dR = pdR[nPID];
-      double dA = pdAx[nPID] ? spi = 0 : pdAy[nPID];
+      double dA = pdAx[nPID] ? spi == 0 : pdAy[nPID];
       double dNewGamma = dGamma + dStep * dStrain;
 
       int nNbrs = pnNPP[nPID];
@@ -290,41 +307,50 @@ __global__ void heun_corr(int nCross, int *pnNPP,int *pnNbrList,double dL, doubl
     		  dFt[thid] += dCx * dPfy - dCy * dPfx;
     	  }
       }
+      //if (thid == 0) {
+      //	printf("Forces calculated on block %d\n", blockIdx.x);
+      //}
+
       if (spi == 0) {
+	//printf("Thread %d on block %d summing forces\n", thid, blockIdx.x);
     	  dFx[thid] += dFx[thid + 2];
     	  dFy[thid] += dFy[thid + 2];
     	  dFt[thid] += dFt[thid + 2];
     	  if (spj == 0) {
-    		  dFx[thid] += dFx[thid + 1];
-    		  dFy[thid] += dFy[thid + 1];
-    		  dFt[thid] += dFt[thid + 1];
-
-    		  double dMOI = pdMOI[nPID];
-    		  double dIsoC = pdIsoC[nPID];
-    		  dFx[thid] -= dNewGamma * dFy;
-    		  dFt[thid] = dFt / dMOI - dStrain * 0.5 * (1 - dIsoC*cos(2*dPhi));
-
-    		  double dFy0 = pdFy[nPID];
-    		  double dFx0 = pdFx[nPID] - dGamma * dFy0;
-    		  double dPhi0 = pdPhi[nPID];
-      
-    		  double dFt0 = pdFt[nPID] / dMOI - dStrain * 0.5 * (1 - dIsoC*cos(2*dPhi0));
-
-    		  double dDx = 0.5 * dStep * (dFx0 + dFx[thid]);
-    		  double dDy = 0.5 * dStep * (dFy0 + dFy[thid]);
-    		  pdX[nPID] += dDx;
-    		  pdY[nPID] += dDy;
-    		  pdPhi[nPID] += 0.5 * dStep * (dFt0 + dFt[thid]);
-       
-    		  pdXMoved[nPID] += dDx;
-    		  pdYMoved[nPID] += dDy;
-    		  if (fabs(pdXMoved[nPID]) > 0.5*dEpsilon || fabs(pdYMoved[nPID]) > 0.5*dEpsilon)
-    			  *bNewNbrs = 1;
+	    //printf("Thread %d on block %d summing forces\n", thid, blockIdx.x);
+	    dFx[thid] += dFx[thid + 1];
+	    dFy[thid] += dFy[thid + 1];
+	    dFt[thid] += dFt[thid + 1];
+	    
+	    double dMOI = pdMOI[nPID];
+	    double dIsoC = pdIsoC[nPID];
+	    dFx[thid] -= dNewGamma * dFy[thid];
+	    dFt[thid] = dFt[thid] / dMOI - dStrain * 0.5 * (1 - dIsoC*cos(2*dPhi));
+	    
+	    double dFy0 = pdFy[nPID];
+	    double dFx0 = pdFx[nPID] - dGamma * dFy0;
+	    double dPhi0 = pdPhi[nPID];
+	    
+	    double dFt0 = pdFt[nPID] / dMOI - dStrain * 0.5 * (1 - dIsoC*cos(2*dPhi0));
+	    
+	    double dDx = 0.5 * dStep * (dFx0 + dFx[thid]);
+	    double dDy = 0.5 * dStep * (dFy0 + dFy[thid]);
+	    pdX[nPID] += dDx;
+	    pdY[nPID] += dDy;
+	    pdPhi[nPID] += 0.5 * dStep * (dFt0 + dFt[thid]);
+	    
+	    pdXMoved[nPID] += dDx;
+	    pdYMoved[nPID] += dDy;
+	    if (fabs(pdXMoved[nPID]) > 0.5*dEpsilon || fabs(pdYMoved[nPID]) > 0.5*dEpsilon)
+	      *bNewNbrs = 1;
     	  }
       }
 
-      nPID += nThreads;
+      nPID += nThreads/4;
     }
+  //if (thid == 0) {
+  // printf("Exiting block %d\n", blockIdx.x);
+  //}
 }
 
 
@@ -341,13 +367,13 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
       switch (m_ePotential)
 	{
 	case HARMONIC:
-	  euler_est <HARMONIC, 1> <<<m_nGridSize, m_nBlockSize, m_nSM_CalcSE>>>
+	  euler_est <HARMONIC, 1> <<<4*m_nGridSize, m_nBlockSize, m_nSM_CalcSE+m_nSM_CalcF>>>
 	    (m_nCross, d_pnNPP, d_pnNbrList, m_dL, m_dGamma,m_dStrainRate,
 	     m_dStep, d_pdX, d_pdY, d_pdPhi, d_pdR, d_pdAx, d_pdAy, d_pdMOI, d_pdIsoC, d_pdFx,
 	     d_pdFy, d_pdFt, d_pfSE, d_pdTempX, d_pdTempY, d_pdTempPhi);
 	  break;
 	case HERTZIAN:
-	  euler_est <HERTZIAN, 1> <<<m_nGridSize, m_nBlockSize, m_nSM_CalcSE>>>
+	  euler_est <HERTZIAN, 1> <<<4*m_nGridSize, m_nBlockSize, m_nSM_CalcSE+m_nSM_CalcF>>>
 	    (m_nCross, d_pnNPP, d_pnNbrList, m_dL, m_dGamma,m_dStrainRate,
 	     m_dStep, d_pdX, d_pdY, d_pdPhi, d_pdR, d_pdAx, d_pdAy, d_pdMOI, d_pdIsoC, d_pdFx,
 	     d_pdFy, d_pdFt, d_pfSE, d_pdTempX, d_pdTempY, d_pdTempPhi);
@@ -369,32 +395,32 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
       switch (m_ePotential)
 	{
 	case HARMONIC:
-	  euler_est <HARMONIC, 0> <<<m_nGridSize, m_nBlockSize>>>
+	  euler_est <HARMONIC, 0> <<<4*m_nGridSize, m_nBlockSize, m_nSM_CalcF>>>
 	    (m_nCross, d_pnNPP, d_pnNbrList, m_dL, m_dGamma,m_dStrainRate,
 	     m_dStep, d_pdX, d_pdY, d_pdPhi, d_pdR, d_pdAx, d_pdAy, d_pdMOI, d_pdIsoC,
 	     d_pdFx, d_pdFy, d_pdFt, d_pfSE, d_pdTempX, d_pdTempY, d_pdTempPhi);
 	  break;
 	case HERTZIAN:
-	  euler_est <HERTZIAN, 0> <<<m_nGridSize, m_nBlockSize>>>
+	  euler_est <HERTZIAN, 0> <<<4*m_nGridSize, m_nBlockSize, m_nSM_CalcF>>>
 	    (m_nCross, d_pnNPP, d_pnNbrList, m_dL, m_dGamma,m_dStrainRate,
 	     m_dStep, d_pdX, d_pdY, d_pdPhi, d_pdR, d_pdAx, d_pdAy, d_pdMOI, d_pdIsoC,
 	     d_pdFx, d_pdFy, d_pdFt, d_pfSE, d_pdTempX, d_pdTempY, d_pdTempPhi);
 	}
-      cudaThreadSynchronize();
+      cudaDeviceSynchronize();
       checkCudaError("Estimating new particle positions");
     }
 
   switch (m_ePotential)
     {
     case HARMONIC:
-      heun_corr <HARMONIC> <<<m_nGridSize, m_nBlockSize>>>
+      heun_corr <HARMONIC> <<<4*m_nGridSize, m_nBlockSize, m_nSM_CalcF>>>
 	(m_nCross, d_pnNPP, d_pnNbrList, m_dL, m_dGamma, m_dStrainRate, 
 	 m_dStep, d_pdX, d_pdY, d_pdPhi, d_pdR, d_pdAx, d_pdAy, d_pdMOI, d_pdIsoC,
 	 d_pdFx, d_pdFy, d_pdFt, d_pdTempX, d_pdTempY, d_pdTempPhi, d_pdXMoved, 
 	 d_pdYMoved, m_dEpsilon, d_bNewNbrs);
       break;
     case HERTZIAN:
-      heun_corr <HERTZIAN> <<<m_nGridSize, m_nBlockSize>>>
+      heun_corr <HERTZIAN> <<<4*m_nGridSize, m_nBlockSize, m_nSM_CalcF>>>
 	(m_nCross, d_pnNPP, d_pnNbrList, m_dL, m_dGamma, m_dStrainRate, 
 	 m_dStep, d_pdX, d_pdY, d_pdPhi, d_pdR, d_pdAx, d_pdAy, d_pdMOI, d_pdIsoC,
 	 d_pdFx, d_pdFy, d_pdFt, d_pdTempX, d_pdTempY, d_pdTempPhi, d_pdXMoved, 
@@ -410,14 +436,14 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
 	save_positions(tTime);
     }
 
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   checkCudaError("Updating estimates, moving particles");
   
   cudaMemcpyAsync(h_bNewNbrs, d_bNewNbrs, sizeof(int), cudaMemcpyDeviceToHost);
 
   m_dGamma += m_dStep * m_dStrainRate;
   m_dTotalGamma += m_dStep * m_dStrainRate;
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
 
   if (m_dGamma > 0.5)
     set_back_gamma();
