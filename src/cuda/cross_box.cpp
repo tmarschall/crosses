@@ -92,6 +92,7 @@ void Cross_Box::set_kernel_configs()
    		   m_nBlockSize = 128;
    		   m_nSM_CalcF = 3*128*sizeof(double);
    		   m_nSM_CalcSE = 4*136*sizeof(double);
+   		   break;
    	   case 512:
    		   m_nGridSize = 4;
    		   m_nBlockSize = 128;
@@ -99,7 +100,7 @@ void Cross_Box::set_kernel_configs()
    		   m_nSM_CalcSE = 4*136*sizeof(double);
    		   break;
    	   case 1024:
-   		   m_nGridSize = 8;  // Grid size (# of thread blocks)
+   		   m_nGridSize = 4;  // Grid size (# of thread blocks)
    		   m_nBlockSize = 256; // Block size (# of threads per block)
    		   m_nSM_CalcF = 3*256*sizeof(double);
    		   m_nSM_CalcSE = 4*264*sizeof(double); // Size of shared memory per block

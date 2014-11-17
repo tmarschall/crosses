@@ -183,7 +183,7 @@ void Cross_Box::calculate_stress_energy()
   
   //dim3 grid(m_nGridSize);
   //dim3 block(m_nBlockSize);
-  //size_t smem = m_nSM_CalcSE;
+  //size_t smem = m_nSM_CalcSE+m_nSM_CalcF;
   //printf("Configuration: %d x %d x %d\n", m_nGridSize, m_nBlockSize, m_nSM_CalcSE);
 
   switch (m_ePotential)

@@ -382,6 +382,12 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
       checkCudaError("Estimating new particle positions, calculating stresses");
 
       cudaMemcpyAsync(h_pfSE, d_pfSE, 4*sizeof(float), cudaMemcpyDeviceToHost);
+      cudaMemcpy(h_pdFx, d_pdFx, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
+      cudaMemcpy(h_pdFy, d_pdFy, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
+      cudaMemcpy(h_pdFt, d_pdFt, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
+      for (int p = 0; p < 10; p++) {
+    	  printf("%d: %g %g %g\n", p, h_pdFx[p], h_pdFy[p], h_pdFt[p]);
+      }
       if (bSvPos)
 	{
 	  cudaMemcpyAsync(h_pdX, d_pdX, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
