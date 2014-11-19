@@ -64,7 +64,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
       
       int nNbrs = pnNPP[nPID];
 
-      printf("nPID: %d, spi: %d, spj: %d, dPhi: %g, dA: %g\n", nPID, spi, spj, dPhi, dA);
+      //printf("nPID: %d, spi: %d, spj: %d, dPhi: %g, dA: %g\n", nPID, spi, spj, dPhi, dA);
       for (int p = 0; p < nNbrs; p++) {
     	  int nAdjPID = pnNbrList[nPID + p * nCross];
 	  //if (spi == 0 && spj == 0) {
@@ -244,7 +244,7 @@ __global__ void heun_corr(int nCross, int *pnNPP,int *pnNbrList,double dL, doubl
       double dY = pdTempY[nPID];
       double dPhi = pdTempPhi[nPID] + spi*D_PI/2;
       double dR = pdR[nPID];
-      double dA = pdAx[nPID] ? spi == 0 : pdAy[nPID];
+      double dA = spi == 0 ? pdAx[nPID] : pdAy[nPID];
       double dNewGamma = dGamma + dStep * dStrain;
 
       int nNbrs = pnNPP[nPID];
@@ -257,7 +257,7 @@ __global__ void heun_corr(int nCross, int *pnNPP,int *pnNbrList,double dL, doubl
     	  double dDeltaY = dY - dAdjY;
     	  double dPhiB = pdTempPhi[nAdjPID] + spj*D_PI/2;
     	  double dSigma = dR + pdR[nAdjPID];
-    	  double dB = pdAx[nAdjPID] ? spj == 0 : pdAy[nAdjPID];
+    	  double dB = spj == 0 ? pdAx[nAdjPID] : pdAy[nAdjPID];
     	  // Make sure we take the closest distance considering boundary conditions
     	  dDeltaX += dL * ((dDeltaX < -0.5*dL) - (dDeltaX > 0.5*dL));
     	  dDeltaY += dL * ((dDeltaY < -0.5*dL) - (dDeltaY > 0.5*dL));
