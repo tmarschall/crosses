@@ -60,7 +60,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
       double dY = pdY[nPID];
       double dPhi = pdPhi[nPID] + spi*D_PI/2;
       double dR = pdR[nPID];
-      double dA = pdAx[nPID] ? spi == 0 : pdAy[nPID];
+      double dA = spi == 0 ? pdAx[nPID] : pdAy[nPID];
       
       int nNbrs = pnNPP[nPID];
 
@@ -77,7 +77,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dDeltaY = dY - dAdjY;
     	  double dPhiB = pdPhi[nAdjPID] + spj*D_PI/2;
     	  double dSigma = dR + pdR[nAdjPID];
-    	  double dB = pdAx[nAdjPID] ? spj == 0 : pdAy[nAdjPID];
+    	  double dB = spj == 0 ? pdAx[nPID] : pdAy[nPID];
 	  
     	  // Make sure we take the closest distance considering boundary conditions
     	  dDeltaX += dL * ((dDeltaX < -0.5*dL) - (dDeltaX > 0.5*dL));
