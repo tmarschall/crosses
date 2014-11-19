@@ -149,6 +149,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     		  dFx[thid] += dFx[thid + 1];
     		  dFy[thid] += dFy[thid + 1];
     		  dFt[thid] += dFt[thid + 1];
+    		  printf("PID: %d block: %d thid: %d - fx: %g fy: %g t: %g\n", nPID, blockIdx.x, thid, dFx[thid], dFy[thid], dFt[thid]);
 
     		  pdFx[nPID] = dFx[thid];
     		  pdFy[nPID] = dFy[thid];
