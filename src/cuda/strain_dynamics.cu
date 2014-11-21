@@ -464,6 +464,7 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
   else if (*h_bNewNbrs) {
     find_neighbors();
     printf("Updating neighbor list at tim %l\n", tTime);
+  }
 }
 
 
