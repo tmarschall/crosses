@@ -457,10 +457,13 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
   m_dTotalGamma += m_dStep * m_dStrainRate;
   cudaDeviceSynchronize();
 
-  if (m_dGamma > 0.5)
+  if (m_dGamma > 0.5) {
     set_back_gamma();
-  else if (*h_bNewNbrs)
+    printf("Setting back gamma at time %l\n", tTime);
+  }
+  else if (*h_bNewNbrs) {
     find_neighbors();
+    printf("Updating neighbor list at tim %l\n", tTime);
 }
 
 
