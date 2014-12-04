@@ -602,6 +602,7 @@ bool Cross_Box::check_for_contacts(int nIndex)
 
 bool Cross_Box::check_for_intersection(int nIndex, double dEpsilon)
 {
+	double dS = 2 * ( m_dAMax + m_dRMax );
 	double dX = h_pdX[nIndex];
 	double dY = h_pdY[nIndex];
 	for (int p = 0; p < nIndex; p++) {
@@ -624,33 +625,35 @@ bool Cross_Box::check_for_intersection(int nIndex, double dEpsilon)
     	// Transform from shear coordinates to lab coordinates
     	dDeltaX += m_dGamma * dDeltaX;
 
-    	for (int i = 0; i < 2; i++) {
-    		for (int j = 0; j < 2; j++) {
-    			double nxA = dAs[i] * cos(dPhiAs[i]);
-    			double nyA = dAs[i] * sin(dPhiAs[i]);
-    			double nxB = dBs[j] * cos(dPhiBs[j]);
-    			double nyB = dBs[j] * sin(dPhiBs[j]);
+    	if (dDeltaX*dDeltaX + dDeltaY*dDeltaY < dS*dS) {
+    		for (int i = 0; i < 2; i++) {
+    			for (int j = 0; j < 2; j++) {
+    				double nxA = dAs[i] * cos(dPhiAs[i]);
+    				double nyA = dAs[i] * sin(dPhiAs[i]);
+    				double nxB = dBs[j] * cos(dPhiBs[j]);
+    				double nyB = dBs[j] * sin(dPhiBs[j]);
     
-    			double a = dAs[i] * dAs[i];
-    			double b = -(nxA * nxB + nyA * nyB);
-    			double c = dBs[j] * dBs[j];
-    			double d = nxA * dDeltaX + nyA * dDeltaY;
-    			double e = -nxB * dDeltaX - nyB * dDeltaY;
-    			double delta = a * c - b * b;
-    
-    			double t = fmin( fmax( (b*d-a*e)/delta, -1. ), 1. );
-    			double s = -(b*t+d)/a;
-    			double sarg = fabs(s);
-    			s = fmin( fmax(s,-1.), 1. );
-    			if (sarg > 1)
-    				t = fmin( fmax( -(b*s+e)/a, -1.), 1.);
-    
-    			// Check if they overlap and calculate forces
-    			double dDx = dDeltaX + s*nxA - t*nxB;
-    			double dDy = dDeltaY + s*nyA - t*nyB;
-    			double dDSqr = dDx * dDx + dDy * dDy;
-    			if (dDSqr < dEpsilon*dSigma*dSigma || dDSqr != dDSqr)
-    				return 1;
+    				double a = dAs[i] * dAs[i];
+    				double b = -(nxA * nxB + nyA * nyB);
+    				double c = dBs[j] * dBs[j];
+    				double d = nxA * dDeltaX + nyA * dDeltaY;
+    				double e = -nxB * dDeltaX - nyB * dDeltaY;
+    				double delta = a * c - b * b;
+
+    				double t = fmin( fmax( (b*d-a*e)/delta, -1. ), 1. );
+    				double s = -(b*t+d)/a;
+    				double sarg = fabs(s);
+    				s = fmin( fmax(s,-1.), 1. );
+    				if (sarg > 1)
+    					t = fmin( fmax( -(b*s+e)/a, -1.), 1.);
+
+    				// Check if they overlap and calculate forces
+    				double dDx = dDeltaX + s*nxA - t*nxB;
+    				double dDy = dDeltaY + s*nyA - t*nyB;
+    				double dDSqr = dDx * dDx + dDy * dDy;
+    				if (dDSqr < dEpsilon*dSigma*dSigma || dDSqr != dDSqr)
+    					return 1;
+    			}
     		}
     	}
 	}

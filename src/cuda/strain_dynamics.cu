@@ -64,7 +64,6 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
       
       int nNbrs = pnNPP[nPID];
 
-      //printf("nPID: %d, spi: %d, spj: %d, dPhi: %g, dA: %g\n", nPID, spi, spj, dPhi, dA);
       for (int p = 0; p < nNbrs; p++) {
     	  int nAdjPID = pnNbrList[nPID + p * nCross];
 	  //if (spi == 0 && spj == 0) {
@@ -78,7 +77,10 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dPhiB = pdPhi[nAdjPID] + spj*D_PI/2;
     	  double dSigma = dR + pdR[nAdjPID];
     	  double dB = spj == 0 ? pdAx[nPID] : pdAy[nPID];
-	  
+    	  if (p == 0) {
+    		  printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dA: %g, dPhiB: %g, dB: %g\n", nPID, spi, nAdjPID, spj, dPhi, dA, dPhiB, dB);
+    	  }
+
     	  // Make sure we take the closest distance considering boundary conditions
     	  dDeltaX += dL * ((dDeltaX < -0.5*dL) - (dDeltaX > 0.5*dL));
     	  dDeltaY += dL * ((dDeltaY < -0.5*dL) - (dDeltaY > 0.5*dL));
@@ -109,7 +111,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dDy = dDeltaY + s*nyA - t*nyB;
     	  double dDSqr = dDx * dDx + dDy * dDy;
     	  if (dDSqr < dSigma*dSigma) {
-	    double dDij = sqrt(dDSqr);
+    	double dDij = sqrt(dDSqr);
 	    double dDVij;
 	    double dAlpha;
 	    if (ePot == HARMONIC) {
