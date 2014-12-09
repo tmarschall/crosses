@@ -142,8 +142,8 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     			  }
     		  }
 
-    		  printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dA: %g, dPhiB: %g, dB: %g, s*nxA: %g, s*nyA: %g, Fx: %g, Fy: %g\n",
-    				  nPID, spi, nAdjPID, spj, dPhi, dA, dPhiB, dB, dCx, dCy, dPfx, dPfy);
+    		  printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dA: %g, dPhiB: %g, dB: %g, s*nxA: %g, s*nyA: %g, t*nxB %g, t*nyB: %g, Dx: %g, Dy: %g, Fx: %g, Fy: %g\n",
+    				  nPID, spi, nAdjPID, spj, dPhi, dA, dPhiB, dB, dCx, dCy, t*nxB, t*nyB, dDx, dDy, dPfx, dPfy);
     	  }
       }
 
