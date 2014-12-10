@@ -110,7 +110,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dDSqr = dDx * dDx + dDy * dDy;
 
     	  printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dPhiB: %g, s: %g, t: %g, Dx: %g, Dy: %g, Dt: %g\n",
-    	      	   nPID, spi, nAdjPID, spj, dPhi, dPhiB, s, t, dDx, dDy, atan(dDy/dDxcb));
+    	      	   nPID, spi, nAdjPID, spj, dPhi, dPhiB, s, t, dDx, dDy, atan(dDy/dDx));
     	  if (dDSqr < dSigma*dSigma) {
     		  double dDij = sqrt(dDSqr);
     		  double dDVij;
