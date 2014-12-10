@@ -57,7 +57,7 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
       double dY = pdY[nPID];
       double dPhi = pdPhi[nPID] + D_PI*spi/2;
       double dR = pdR[nPID];
-      double dA = pdAx[nPID] ? spi == 0 : pdAy[nPID];
+      double dA = spi == 0 ? pdAx[nPID] : pdAy[nPID];
       
       int nNbrs = pnNPP[nPID];
       for (int p = 0; p < nNbrs; p++) {
@@ -67,7 +67,7 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
     	  double dDeltaY = dY - pdY[nAdjPID];
     	  double dPhiB = pdPhi[nAdjPID] + D_PI*spj/2;
     	  double dSigma = dR + pdR[nAdjPID];
-    	  double dB = pdAx[nAdjPID] ? spj == 0 : pdAy[nAdjPID];
+    	  double dB = spj == 0 ? pdAx[nPID] : pdAy[nPID];
     	  // Make sure we take the closest distance considering boundary conditions
     	  dDeltaX += dL * ((dDeltaX < -0.5*dL) - (dDeltaX > 0.5*dL));
     	  dDeltaY += dL * ((dDeltaY < -0.5*dL) - (dDeltaY > 0.5*dL));

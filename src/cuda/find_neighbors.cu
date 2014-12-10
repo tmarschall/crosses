@@ -64,7 +64,7 @@ __global__ void find_rot_consts(int nCross, double *pdMOI, double *pdIsoCoeff, d
 //  not all of these particles will get added to the cell list
 ///////////////////////////////////////////////////////////////
 __global__ void find_cells(int nCross, int nMaxPPC, double dCellW, double dCellH,
-			   	   int nCellCols, double dL, double *pdX, double *pdY,
+			   	   int nCellCols, double dL, double *pdX, double *pdY, double *pdPhi,
 			   	   int *pnCellID, int *pnPPC, int *pnCellList)
 {
   // Assign each thread a unique ID accross all thread-blocks, this is its particle ID
@@ -74,29 +74,34 @@ __global__ void find_cells(int nCross, int nMaxPPC, double dCellW, double dCellH
   while (nPID < nCross) {
     double dX = pdX[nPID];
     double dY = pdY[nPID];
+    double dPhi = pdPhi[nPID];
     
     // I often allow the stored coordinates to drift slightly outside the box limits
     //  until 
-    if (dY > dL)
-      {
-	dY -= dL;
-	pdY[nPID] = dY;
-      }
-    else if (dY < 0)
-      {
-	dY += dL;
-	pdY[nPID] = dY;
-      }
-    if (dX > dL)
-      {
-	dX -= dL;
-	pdX[nPID] = dX;
-      }
-    else if (dX < 0)
-      {
-	dX += dL;
-	pdX[nPID] = dX;
-      }
+    if (dY > dL) {
+    	dY -= dL;
+    	pdY[nPID] = dY;
+    }
+    else if (dY < 0) {
+    	dY += dL;
+    	pdY[nPID] = dY;
+    }
+    if (dX > dL) {
+    	dX -= dL;
+    	pdX[nPID] = dX;
+    }
+    else if (dX < 0) {
+    	dX += dL;
+    	pdX[nPID] = dX;
+    }
+    if (dPhi > -D_PI) {
+    	dPhi -= 2*D_PI;
+    	pdPhi[nPID] = dPhi;
+    }
+    else if (dPhi < -D_PI) {
+    	dPhi += 2*D_PI;
+    	pdPhi[nPID] = dPhi;
+    }
 
     //find the cell ID, add a particle to that cell 
     int nCol = (int)(dX / dCellW);
@@ -236,8 +241,8 @@ void Cross_Box::find_neighbors()
     find_rot_consts <<<m_nGridSize, m_nBlockSize>>> (m_nCross, d_pdMOI, d_pdIsoC, d_pdR, d_pdAx, d_pdAy);
 
   find_cells <<<m_nGridSize, m_nBlockSize>>>
-    (m_nCross, m_nMaxPPC, m_dCellW, m_dCellH, m_nCellCols, 
-     m_dL, d_pdX, d_pdY, d_pnCellID, d_pnPPC, d_pnCellList);
+    (m_nCross, m_nMaxPPC, m_dCellW, m_dCellH, m_nCellCols, m_dL,
+     d_pdX, d_pdY, d_pdPhi, d_pnCellID, d_pnPPC, d_pnCellList);
   cudaThreadSynchronize();
   checkCudaError("Finding cells");
 
@@ -289,42 +294,35 @@ __global__ void set_back_coords(int nCross, double dL, double *pdX, double *pdY,
     double dPhi = pdPhi[nPID];
     
     // I often allow the stored coordinates to drift slightly outside the box limits
-    if (dPhi > D_PI)
-      {
-	dPhi -= 2*D_PI;
-	pdPhi[nPID] = dPhi;
-      }
-    else if (dPhi < -D_PI)
-      {
-	dPhi += 2*D_PI;
-	pdPhi[nPID] = dPhi;
-      }
-    if (dY > dL)
-      {
-	dY -= dL;
-	pdY[nPID] = dY;
-      }
-    else if (dY < 0)
-      {
-	dY += dL;
-	pdY[nPID] = dY;
-      }
+    if (dPhi > D_PI) {
+    	dPhi -= 2*D_PI;
+    	pdPhi[nPID] = dPhi;
+    }
+    else if (dPhi < -D_PI) {
+    	dPhi += 2*D_PI;
+    	pdPhi[nPID] = dPhi;
+    }
+    if (dY > dL) {
+    	dY -= dL;
+    	pdY[nPID] = dY;
+    }
+    else if (dY < 0) {
+    	dY += dL;
+    	pdY[nPID] = dY;
+    }
     
     // When gamma -> gamma-1, Xi -> Xi + Yi
     dX += dY;
-    if (dX < 0)
-      {
-	dX += dL;
-      }
-    while (dX > dL)
-      {
-	dX -= dL;
-      }
+    if (dX < 0) {
+    	dX += dL;
+    }
+    while (dX > dL) {
+    	dX -= dL;
+    }
     pdX[nPID] = dX;
 
     nPID += nThreads;
   }
-  
 
 }
 
@@ -390,7 +388,7 @@ void Cross_Box::set_back_gamma()
 //  used for reordering particles
 /////////////////////////////////////////////////////////////////////////
 __global__ void find_cells_nomax(int nCross, double dCellW, double dCellH,
-				 int nCellCols, double dL, double *pdX, double *pdY, 
+				 int nCellCols, double dL, double *pdX, double *pdY, double *pdPhi,
 				 int *pnCellID, int *pnPPC)
 {
   // Assign each thread a unique ID accross all thread-blocks, this is its particle ID
@@ -400,6 +398,7 @@ __global__ void find_cells_nomax(int nCross, double dCellW, double dCellH,
   while (nPID < nCross) {
     double dX = pdX[nPID];
     double dY = pdY[nPID];
+    double dPhi = pdPhi[nPID];
     
     // Particles are allowed to drift slightly outside the box limits
     //  until cells are reassigned due to a particle drift of dEpsilon/2 
@@ -415,6 +414,14 @@ __global__ void find_cells_nomax(int nCross, double dCellW, double dCellH,
     else if (dX < 0) {
       dX += dL;
       pdX[nPID] = dX; }
+    if (dPhi < -D_PI) {
+    	dPhi += 2*D_PI;
+    	pdPhi[nPID] = dPhi;
+    }
+    else if (dPhi > D_PI) {
+    	dPhi -= 2*D_PI;
+    	pdPhi[nPID] = dPhi;
+    }
 
     //find the cell ID, add a particle to that cell 
     int nCol = (int)(dX / dCellW);
@@ -476,8 +483,8 @@ void Cross_Box::reorder_particles()
 
   //find particle cell IDs and number of particles in each cell
   find_cells_nomax <<<m_nGridSize, m_nBlockSize>>>
-    (m_nCross, m_dCellW, m_dCellH, m_nCellCols, 
-     m_dL, d_pdX, d_pdY, d_pnCellID, d_pnPPC);
+    (m_nCross, m_dCellW, m_dCellH, m_nCellCols, m_dL,
+     d_pdX, d_pdY, d_pdPhi, d_pnCellID, d_pnPPC);
   cudaThreadSynchronize();
   checkCudaError("Reordering particles: Finding cells");
 

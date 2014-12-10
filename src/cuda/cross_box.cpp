@@ -729,7 +729,7 @@ void Cross_Box::place_random_cross(int seed, bool bRandAngle)
   h_pdX[0] = m_dL * static_cast<double>(rand())/static_cast<double>(RAND_MAX);
   h_pdY[0] = m_dL * static_cast<double>(rand())/static_cast<double>(RAND_MAX);
   if (bRandAngle)
-    h_pdPhi[0] = 2*D_PI * static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+    h_pdPhi[0] = D_PI * (2 * static_cast<double>(rand())/static_cast<double>(RAND_MAX) - 1);
   else
     h_pdPhi[0] = - D_PI * 0.25;
 
@@ -741,7 +741,7 @@ void Cross_Box::place_random_cross(int seed, bool bRandAngle)
       h_pdX[p] = m_dL * static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
       h_pdY[p] = m_dL * static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
       if (bRandAngle)
-    	  h_pdPhi[p] = 2*D_PI * static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
+    	  h_pdPhi[p] = D_PI * (2 * static_cast<double>(rand()) / static_cast<double>(RAND_MAX) - 1);
       else
     	  h_pdPhi[p] = 0;
 

@@ -108,6 +108,9 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dDx = dDeltaX + s*nxA - t*nxB;
     	  double dDy = dDeltaY + s*nyA - t*nyB;
     	  double dDSqr = dDx * dDx + dDy * dDy;
+
+    	  printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dPhiB: %g, s: %g, t: %g, Dx: %g, Dy: %g, Dt: %g\n",
+    	      	   nPID, spi, nAdjPID, spj, dPhi, dPhiB, s, t, dDx, dDy, atan(dDy/dDx));
     	  if (dDSqr < dSigma*dSigma) {
     		  double dDij = sqrt(dDSqr);
     		  double dDVij;
@@ -142,8 +145,8 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     			  }
     		  }
 
-    		  printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dA: %g, dPhiB: %g, dB: %g, s*nxA: %g, s*nyA: %g, t*nxB %g, t*nyB: %g, Dx: %g, Dy: %g, Fx: %g, Fy: %g\n",
-    				  nPID, spi, nAdjPID, spj, dPhi, dA, dPhiB, dB, dCx, dCy, t*nxB, t*nyB, dDx, dDy, dPfx, dPfy);
+    		  //printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dA: %g, dPhiB: %g, dB: %g, s*nxA: %g, s*nyA: %g, t*nxB %g, t*nyB: %g, Dx: %g, Dy: %g, Fx: %g, Fy: %g\n",
+    		  //	   nPID, spi, nAdjPID, spj, dPhi, dA, dPhiB, dB, dCx, dCy, t*nxB, t*nyB, dDx, dDy, dPfx, dPfy);
     	  }
       }
 
@@ -464,11 +467,11 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
 
   if (m_dGamma > 0.5) {
     set_back_gamma();
-    printf("Setting back gamma at time %ld\n", tTime);
+    //printf("Setting back gamma at time %ld\n", tTime);
   }
   else if (*h_bNewNbrs) {
     find_neighbors();
-    printf("Updating neighbor list at time %ld\n", tTime);
+    //printf("Updating neighbor list at time %ld\n", tTime);
   }
 }
 
