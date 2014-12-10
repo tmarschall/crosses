@@ -91,7 +91,7 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
     	  double sarg = fabs(s);
     	  s = fmin( fmax(s,-1.), 1. );
     	  if (sarg > 1)
-    		  t = fmin( fmax( -(b*s+e)/a, -1.), 1.);
+    		  t = fmin( fmax( -(b*s+e)/c, -1.), 1.);
 	  
     	  // Check if they overlap and calculate forces
     	  double dDx = dDeltaX + s*nxA - t*nxB;
@@ -255,7 +255,7 @@ __global__ void find_contact(int nCross, int *pnNPP, int *pnNbrList, double dL,
     	  double sarg = fabs(s);
     	  s = fmin( fmax(s,-1.), 1. );
     	  if (sarg > 1)
-    		  t = fmin( fmax( -(b*s+e)/a, -1.), 1.);
+    		  t = fmin( fmax( -(b*s+e)/c, -1.), 1.);
 	  
     	  // Check if they overlap and calculate forces
     	  double dDx = dDeltaX + s*nxA - t*nxB;

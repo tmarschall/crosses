@@ -102,7 +102,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double sarg = fabs(s);
     	  s = fmin( fmax(s,-1.), 1. );
     	  if (sarg > 1)
-    		  t = fmin( fmax( -(b*s+e)/a, -1.), 1.);
+    		  t = fmin( fmax( -(b*s+e)/c, -1.), 1.);
 	  
     	  // Check if they overlap and calculate forces
     	  double dDx = dDeltaX + s*nxA - t*nxB;
@@ -110,7 +110,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     	  double dDSqr = dDx * dDx + dDy * dDy;
 
     	  printf("nPID: %d, spi: %d, nAdjPID: %d, spj: %d, dPhi: %g, dPhiB: %g, s: %g, t: %g, Dx: %g, Dy: %g, Dt: %g\n",
-    	      	   nPID, spi, nAdjPID, spj, dPhi, dPhiB, s, t, dDx, dDy, atan(dDy/dDx));
+    	      	   nPID, spi, nAdjPID, spj, dPhi, dPhiB, s, t, dDx, dDy, atan(dDy/dDxcb));
     	  if (dDSqr < dSigma*dSigma) {
     		  double dDij = sqrt(dDSqr);
     		  double dDVij;
@@ -289,7 +289,7 @@ __global__ void heun_corr(int nCross, int *pnNPP,int *pnNbrList,double dL, doubl
     	  double sarg = fabs(s);
     	  s = fmin( fmax(s,-1.), 1. );
     	  if (sarg > 1)
-    		  t = fmin( fmax( -(b*s+e)/a, -1.), 1.);
+    		  t = fmin( fmax( -(b*s+e)/c, -1.), 1.);
 
     	  // Check if they overlap and calculate forces
     	  double dDx = dDeltaX + s*nxA - t*nxB;
