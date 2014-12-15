@@ -151,17 +151,18 @@ void Cross_Box::construct_defaults()
 #endif
   
   // Stress, energy, & force data
-  cudaHostAlloc((void **)&h_pfSE, 4*sizeof(float), 0);
-  m_pfEnergy = h_pfSE;
-  m_pfPxx = h_pfSE+1;
-  m_pfPyy = h_pfSE+2;
-  m_pfPxy = h_pfSE+3;
+  cudaHostAlloc((void **)&h_pfSE, 5*sizeof(float), 0);
+  m_pfEnergy = h_pfSE+4;
+  m_pfPxx = h_pfSE;
+  m_pfPyy = h_pfSE+3;
+  m_pfPxy = h_pfSE+1;
+  m_pfPyx = h_pfSE+2;
   m_fP = 0;
   h_pdFx = new double[m_nCross];
   h_pdFy = new double[m_nCross];
   h_pdFt = new double[m_nCross];
   // GPU
-  cudaMalloc((void**) &d_pfSE, 4*sizeof(float));
+  cudaMalloc((void**) &d_pfSE, 5*sizeof(float));
   cudaMalloc((void**) &d_pdFx, m_nCross*sizeof(double));
   cudaMalloc((void**) &d_pdFy, m_nCross*sizeof(double));
   cudaMalloc((void**) &d_pdFt, m_nCross*sizeof(double));
@@ -512,7 +513,7 @@ void Cross_Box::display(bool bParticles, bool bCells, bool bNeighbors, bool bStr
     }
   if (bStress)
     {
-      cudaMemcpyAsync(h_pfSE, d_pfSE, 4*sizeof(float), cudaMemcpyDeviceToHost);
+      cudaMemcpyAsync(h_pfSE, d_pfSE, 5*sizeof(float), cudaMemcpyDeviceToHost);
       cudaMemcpy(h_pdFx, d_pdFx, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
       cudaMemcpy(h_pdFy, d_pdFy, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
       cudaMemcpy(h_pdFt, d_pdFt, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
@@ -525,10 +526,11 @@ void Cross_Box::display(bool bParticles, bool bCells, bool bNeighbors, bool bStr
 	       << h_pdFy[p] << ", " << h_pdFt[p] << ")\n";
 	}
       cout << endl << "Energy: " << *m_pfEnergy << endl;
-      cout << "Pxx: " << *m_pfPxx << endl;
-      cout << "Pyy: " << *m_pfPyy << endl;
       cout << "Total P: " << m_fP << endl;
+      cout << "Pxx: " << *m_pfPxx << endl;
       cout << "Pxy: " << *m_pfPxy << endl;
+      cout << "Pxy: " << *m_pfPyx << endl;
+      cout << "Pyy: " << *m_pfPyy << endl;
     }
 }
 

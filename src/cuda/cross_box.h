@@ -90,6 +90,7 @@ class Cross_Box
   float *m_pfPxx;
   float *m_pfPyy;
   float *m_pfPxy;
+  float *m_pfPyx;
   float m_fP;  // Total pressure
   float *h_pfSE;  // Array for transfering the stresses and energy
   double *h_pdFx;

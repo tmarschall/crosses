@@ -114,11 +114,15 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
     		  dFx[thid] += dPfx;
     		  dFy[thid] += dPfy;
     		  dFt[thid] += s*nxA * dPfy - s*nyA * dPfx;
+		  double dCx = 0.5*dDx - s*nxA;
+		  double dCy = 0.5*dDy - s*nyA;
+		  sData[thid] += dPfx * dCx / (dL * dL);
+		  sData[thid + offset] += dPfy * dCx / (dL * dL);
+		  sData[thid + 2*offset] += dPfx * dCy / (dL * dL);
+		  sData[thid + 3*offset] += dPfy * dCy / (dL * dL);
     		  if (nAdjPID > nPID) {
-    			  sData[thid] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
-    			  sData[thid + offset] += dPfx * dDx / (dL * dL);
-    			  sData[thid + 2*offset] += dPfy * dDy / (dL * dL);
-    			  sData[thid + 3*offset] += dPfx * dDy / (dL * dL);
+		    sData[thid + 4*offset] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
+		    
     		  }
     	  }
       }
@@ -144,42 +148,47 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
   sData[base] += sData[base + stride];
   base += 2*offset;
   sData[base] += sData[base + stride];
+  if (thid < stride) {
+    base += 2*offset;
+    sData[base] += sData[base + stride];
+  }
   stride /= 2; // stride is 1/4 block size, all threads perform 1 add
   __syncthreads();
   base = thid % stride + offset * (thid / stride);
   sData[base] += sData[base + stride];
+  if (thid < stride) {
+    base += 4*offset;
+    sData[base] += sData[base + stride];
+  }
   stride /= 2;
   __syncthreads();
-  while (stride > 8) {
-      if (thid < 4 * stride) {
+  while (stride > 6) {
+      if (thid < 5 * stride) {
     	  base = thid % stride + offset * (thid / stride);
     	  sData[base] += sData[base + stride];
       }
       stride /= 2;  
       __syncthreads();
   }
-  if (thid < 32) { //unroll end of loop
-	  base = thid % 8 + offset * (thid / 8);
-      sData[base] += sData[base + 8];
-      if (thid < 16) {
-    	  base = thid % 4 + offset * (thid / 4);
-    	  sData[base] += sData[base + 4];
-    	  if (thid < 8) {
-    		  base = thid % 2 + offset * (thid / 2);
-    		  sData[base] += sData[base + 2];
-    		  if (thid < 4) {
-    			  sData[thid * offset] += sData[thid * offset + 1];
-    			  float tot = atomicAdd(pfSE+thid, (float)sData[thid*offset]);
-    		  }
-    	  }
+  
+  if (thid < 20) {
+    base = thid % 4 + offset * (thid / 4);
+    sData[base] += sData[base + 4];
+    if (thid < 10) {
+      base = thid % 2 + offset * (thid / 2);
+      sData[base] += sData[base + 2];
+      if (thid < 5) {
+	sData[thid * offset] += sData[thid * offset + 1];
+	float tot = atomicAdd(pfSE+thid, (float)sData[thid*offset]);
       }
+    }
   }
 }
 
 
 void Cross_Box::calculate_stress_energy()
 {
-  cudaMemset((void*) d_pfSE, 0, 4*sizeof(float));
+  cudaMemset((void*) d_pfSE, 0, 5*sizeof(float));
   
   //dim3 grid(m_nGridSize);
   //dim3 block(m_nBlockSize);
