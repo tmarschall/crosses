@@ -40,7 +40,7 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
   int nPID = (thid + blockIdx.x * blockDim.x)/4;
   int nThreads = blockDim.x * gridDim.x;
   int offset = blockDim.x + 8; // +8 helps to avoid bank conflicts
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 5; i++)
     sData[i*offset + thid] = 0.0;
   __syncthreads();  // synchronizes every thread in the block before going on
 

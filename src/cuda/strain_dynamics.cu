@@ -36,7 +36,7 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
   extern __shared__ double sData[];
   int offset = blockDim.x + 8; // +8 should help to avoid a few bank conflict
   if (bCalcStress) {
-      for (int i = 0; i < 4; i++)
+      for (int i = 0; i < 5; i++)
         sData[3*blockDim.x + i*offset + thid] = 0.0;
     __syncthreads();  // synchronizes every thread in the block before going on
   }
@@ -135,8 +135,8 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     		  dFt[thid] += dCx * dPfy - dCy * dPfx;
     		  if (bCalcStress) {
 		    sData[3*blockDim.x + thid ] -= dPfx * dCx / (dL * dL);
-		    sData[3*blockDim.x + thid + offset] -= dPfy * dCy / (dL * dL);
-		    sData[3*blockDim.x + thid + 2*offset] -= dPfy * dCx / (dL * dL);
+		    sData[3*blockDim.x + thid + offset] -= dPfy * dCx / (dL * dL);
+		    sData[3*blockDim.x + thid + 2*offset] -= dPfx * dCy / (dL * dL);
 		    sData[3*blockDim.x + thid + 3*offset] -= dPfy * dCy / (dL * dL);
 		    if (nAdjPID > nPID) {
 		      sData[3*blockDim.x + thid + 4*offset] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
@@ -379,7 +379,7 @@ void Cross_Box::strain_step(long unsigned int tTime, bool bSvStress, bool bSvPos
 {
   if (bSvStress)
     {
-      cudaMemset((void *) d_pfSE, 0, 4*sizeof(float));
+      cudaMemset((void *) d_pfSE, 0, 5*sizeof(float));
 
       switch (m_ePotential)
 	{
@@ -616,7 +616,8 @@ void Cross_Box::run_strain(double dStartGamma, double dStopGamma, double dSvStre
   calculate_stress_energy();
   cudaMemcpyAsync(h_pdX, d_pdX, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
   cudaMemcpyAsync(h_pdY, d_pdY, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpyAsync(h_pfSE, d_pfSE, 4*sizeof(float), cudaMemcpyDeviceToHost);
+  cudaMemcpyAsync(h_pdPhi, d_pdPhi, m_nCross*sizeof(double), cudaMemcpyDeviceToHost);
+  cudaMemcpyAsync(h_pfSE, d_pfSE, 5*sizeof(float), cudaMemcpyDeviceToHost);
   cudaThreadSynchronize();
   m_fP = 0.5 * (*m_pfPxx + *m_pfPyy);
   fprintf(m_pOutfSE, "%lu %.7g %.7g %.7g %.7g %.7g %.7g\n", 

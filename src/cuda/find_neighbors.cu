@@ -94,7 +94,7 @@ __global__ void find_cells(int nCross, int nMaxPPC, double dCellW, double dCellH
     	dX += dL;
     	pdX[nPID] = dX;
     }
-    if (dPhi > -D_PI) {
+    if (dPhi > D_PI) {
     	dPhi -= 2*D_PI;
     	pdPhi[nPID] = dPhi;
     }

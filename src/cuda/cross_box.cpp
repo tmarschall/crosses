@@ -91,25 +91,25 @@ void Cross_Box::set_kernel_configs()
    		   m_nGridSize = 2;
    		   m_nBlockSize = 128;
    		   m_nSM_CalcF = 3*128*sizeof(double);
-   		   m_nSM_CalcSE = 4*136*sizeof(double);
+   		   m_nSM_CalcSE = 5*136*sizeof(double);
    		   break;
    	   case 512:
    		   m_nGridSize = 4;
    		   m_nBlockSize = 128;
    		   m_nSM_CalcF = 3*128*sizeof(double);
-   		   m_nSM_CalcSE = 4*136*sizeof(double);
+   		   m_nSM_CalcSE = 5*136*sizeof(double);
    		   break;
    	   case 1024:
    		   m_nGridSize = 4;  // Grid size (# of thread blocks)
    		   m_nBlockSize = 256; // Block size (# of threads per block)
    		   m_nSM_CalcF = 3*256*sizeof(double);
-   		   m_nSM_CalcSE = 4*264*sizeof(double); // Size of shared memory per block
+   		   m_nSM_CalcSE = 5*264*sizeof(double); // Size of shared memory per block
    		   break;
    	   default:
    		   m_nGridSize = m_nCross / 512;
    		   m_nBlockSize = 512;
    		   m_nSM_CalcF = 3*512*sizeof(double);
-   		   m_nSM_CalcSE = 4*520*sizeof(double);
+   		   m_nSM_CalcSE = 5*520*sizeof(double);
     };
   cout << "Kernel config (cross):\n";
   cout << m_nGridSize << " x " << m_nBlockSize << endl;
@@ -221,6 +221,7 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
   m_nMaxNbrs = nMaxNbrs;
   m_dRMax = dR;
   m_dAMax = dAx;
+  m_dARatio = dAy/dAx;
   m_nDeviceMem = 0;
 
   // This allocates the coordinate data as page-locked memory, which
@@ -288,6 +289,7 @@ Cross_Box::Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pd
   cudaHostAlloc((void**)&h_pnMemID, nCross*sizeof(int), 0);
   m_dRMax = 0.0;
   m_dAMax = 0.0;
+  m_dARatio = pdAy[0]/pdAx[0];
   for (int p = 0; p < nCross; p++)
     {
       h_pdX[p] = pdX[p];
@@ -669,7 +671,7 @@ void Cross_Box::place_random_0e_cross(int seed, bool bRandAngle)
   for (int p = 0; p < m_nCross; p++) {
     h_pdR[p] = m_dRMax;
     h_pdAx[p] = m_dAMax;
-    h_pdAy[p] = 0.5*m_dAMax;
+    h_pdAy[p] = m_dARatio*m_dAMax;
     h_pnMemID[p] = p;
   }
   cudaMemcpy(d_pdR, h_pdR, sizeof(double)*m_nCross, cudaMemcpyHostToDevice);
@@ -718,7 +720,7 @@ void Cross_Box::place_random_cross(int seed, bool bRandAngle)
   for (int p = 0; p < m_nCross; p++) {
     h_pdR[p] = m_dRMax;
     h_pdAx[p] = m_dAMax;
-    h_pdAy[p] = 0.5*m_dAMax;
+    h_pdAy[p] = m_dARatio*m_dAMax;
     h_pnMemID[p] = p;
   }
   cudaMemcpy(d_pdR, h_pdR, sizeof(double)*m_nCross, cudaMemcpyHostToDevice);

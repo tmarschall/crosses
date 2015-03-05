@@ -40,6 +40,7 @@ class Cross_Box
   // Coordinates etc. for cross
   double m_dRMax;  // Largest radius
   double m_dAMax;  // Largest cross half-shaft
+  double m_dARatio;
   // Position and orientation arrays to be allocated on the CPU (host)
   double *h_pdX;
   double *h_pdY;
@@ -159,11 +160,11 @@ class Cross_Box
 
  public:
   Cross_Box(int nCross, double dL, double dR, double dAx, double dAy,
-		  	double dEpsilon = 0.1,  int nMaxPPC = 10, int nMaxNbrs = 20,
+		  	double dEpsilon = 0.1,  int nMaxPPC = 10, int nMaxNbrs = 25,
 		  	Potential ePotential = HARMONIC);
   Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi,
 		  	double *pdR, double *pdAx, double *pdAy, double dEpsilon = 0.1,
-		  	int nMaxPPC = 10, int nMaxNbrs = 20, Potential ePotential = HARMONIC);
+		  	int nMaxPPC = 10, int nMaxNbrs = 25, Potential ePotential = HARMONIC);
   ~Cross_Box();
 
   void place_random_cross(int seed = 0, bool bRandAngle = 1);
