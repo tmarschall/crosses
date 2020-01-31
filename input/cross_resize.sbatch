@@ -11,5 +11,5 @@
 
 module load cuda
 
-mkdir -p /scratch/tmarscha/cross/resize/n512/p65/dr1e-9/r3/
-srun ~/crosses/exe/cross_box_resize r /scratch/tmarscha/cross/resize/n512/p65/dr1e-9/r3/ 512 -1e-9 0.025 0.65 0.001 0.00001 0.08 0.3 0.5 2.5 2.5
+mkdir -p /scratch/$USER/cross/test/resize/
+srun ~/crosses/exe/cross_box_resize r /scratch/tmarscha/cross/test/resize/ 1024 -1e-6 0.02 0.85 0.001 0.00001 0.08 0.3 0.5 2.0 1.0

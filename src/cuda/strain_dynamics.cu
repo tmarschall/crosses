@@ -134,10 +134,10 @@ __global__ void euler_est(int nCross, int *pnNPP, int *pnNbrList, double dL, dou
     		  //double dCy = s*nyA;
     		  dFt[thid] += dCx * dPfy - dCy * dPfx;
     		  if (bCalcStress) {
-		    sData[3*blockDim.x + thid ] += dPfx * dCx / (dL * dL);
-		    sData[3*blockDim.x + thid + offset] += dPfy * dCx / (dL * dL);
-		    sData[3*blockDim.x + thid + 2*offset] += dPfx * dCy / (dL * dL);
-		    sData[3*blockDim.x + thid + 3*offset] += dPfy * dCy / (dL * dL);
+		    sData[3*blockDim.x + thid ] -= dPfx * dCx / (dL * dL);
+		    sData[3*blockDim.x + thid + offset] -= dPfy * dCx / (dL * dL);
+		    sData[3*blockDim.x + thid + 2*offset] -= dPfx * dCy / (dL * dL);
+		    sData[3*blockDim.x + thid + 3*offset] -= dPfy * dCy / (dL * dL);
 		    if (nAdjPID > nPID) {
 		      sData[3*blockDim.x + thid + 4*offset] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
 		      
