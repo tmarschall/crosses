@@ -41,6 +41,7 @@ class Cross_Box
   double m_dRMax;  // Largest radius
   double m_dAMax;  // Largest cross half-shaft
   double m_dARatio;
+  double m_dKd; // Dissipative constant
   // Position and orientation arrays to be allocated on the CPU (host)
   double *h_pdX;
   double *h_pdY;
@@ -57,6 +58,7 @@ class Cross_Box
   double *d_pdR;
   double *d_pdAx;
   double *d_pdAy;
+  double *d_pdArea;  // Particle area
   double *d_pdMOI;  // Moment of Inertia
   double *d_pdIsoC;  // Coefficient for isolated rotation function
   bool m_bMOI;
@@ -152,19 +154,20 @@ class Cross_Box
   
   void construct_defaults();
   void configure_cells();
+  void reconfigure_cells();
   void set_kernel_configs();
   double calculate_packing();
   
   void save_positions(long unsigned int nTime);
   void strain_step(long unsigned int nTime, bool bSvStress = 0, bool bSvPos = 0);
+  void resize_step(double dResizeRate, long unsigned int nTime, bool bSvStress = 0, bool bSvPos = 0);
 
  public:
-  Cross_Box(int nCross, double dL, double dR, double dAx, double dAy,
-		  	double dEpsilon = 0.1,  int nMaxPPC = 10, int nMaxNbrs = 25,
-		  	Potential ePotential = HARMONIC);
-  Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi,
-		  	double *pdR, double *pdAx, double *pdAy, double dEpsilon = 0.1,
-		  	int nMaxPPC = 10, int nMaxNbrs = 25, Potential ePotential = HARMONIC);
+  Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, double dKd, double dEpsilon = 0.1, 
+	    bool bZeroE = 0, int nMaxPPC = 10, int nMaxNbrs = 25, Potential ePotential = HARMONIC);
+  Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi, 
+	    double *pdR, double *pdAx, double *pdAy, double dKd, double dEpsilon = 0.1, 
+	    int nMaxPPC = 10, int nMaxNbrs = 25, Potential ePotential = HARMONIC);
   ~Cross_Box();
 
   void place_random_cross(int seed = 0, bool bRandAngle = 1);
@@ -179,6 +182,7 @@ class Cross_Box
   bool check_for_intersection(int nIndex, double dEpsilon = 1e-5);
   void run_strain(double dStartGam, double dStopGam, double dSvStressGam, double dSvPosGam);
   void run_strain(long unsigned int nSteps);
+  void resize_box(double dResizeRate, double dFinalPack, double dSvStressRate, double dSvPosRate);
   
 #if GOLD_FUNCS == 1
   void calculate_stress_energy_gold();

@@ -9,7 +9,7 @@
 
 #include "data_primitives.h"
 #include <cuda.h>
-#include <sm_20_atomic_functions.h>
+#include <sm_35_atomic_functions.h>
 #include "cudaErr.h"
 #include <stdio.h>
 

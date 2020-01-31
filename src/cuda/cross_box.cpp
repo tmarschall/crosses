@@ -19,6 +19,30 @@ using namespace std;
 
 const double D_PI = 3.14159265358979;
 
+
+
+void Cross_Box::reconfigure_cells() {
+  double dWMin = 2.24 * (m_dRMax + m_dAMax) + m_dEpsilon;
+  double dHMin = 2 * (m_dRMax + m_dAMax) + m_dEpsilon;
+
+  int nNewCellRows = max(static_cast<int>(m_dL / dHMin), 3);
+  int nNewCellCols = max(static_cast<int>(m_dL / dWMin), 3);
+  if (nNewCellRows != m_nCellRows || nNewCellCols != m_nCellCols) {
+    delete[] h_pnPPC; delete[] h_pnCellList; delete[] h_pnAdjCells;
+    cudaFree(d_pnPPC); cudaFree(d_pnCellList); cudaFree(d_pnAdjCells);
+#if GOLD_FUNCS == 1
+    delete[] g_pnPPC; delete[] g_pnCellList; delete[] g_pnAdjCells;
+#endif
+    *h_bNewNbrs = 1;
+    configure_cells();
+  }
+  else {
+    m_dCellW = m_dL / m_nCellCols;
+    m_dCellH = m_dL / m_nCellRows;
+  }
+}
+
+
 // Just setting things up here
 //  configure_cells() decides how the space should be divided into cells
 //  and which cells are next to each other
@@ -87,29 +111,34 @@ void Cross_Box::set_kernel_configs()
 {
   switch (m_nCross)
     {
-   	   case 256:
-   		   m_nGridSize = 2;
-   		   m_nBlockSize = 128;
-   		   m_nSM_CalcF = 3*128*sizeof(double);
-   		   m_nSM_CalcSE = 5*136*sizeof(double);
-   		   break;
-   	   case 512:
-   		   m_nGridSize = 4;
-   		   m_nBlockSize = 128;
-   		   m_nSM_CalcF = 3*128*sizeof(double);
-   		   m_nSM_CalcSE = 5*136*sizeof(double);
-   		   break;
-   	   case 1024:
-   		   m_nGridSize = 4;  // Grid size (# of thread blocks)
-   		   m_nBlockSize = 256; // Block size (# of threads per block)
-   		   m_nSM_CalcF = 3*256*sizeof(double);
-   		   m_nSM_CalcSE = 5*264*sizeof(double); // Size of shared memory per block
-   		   break;
-   	   default:
-   		   m_nGridSize = m_nCross / 512;
-   		   m_nBlockSize = 512;
-   		   m_nSM_CalcF = 3*512*sizeof(double);
-   		   m_nSM_CalcSE = 5*520*sizeof(double);
+    case 256:
+      m_nGridSize = 2;
+      m_nBlockSize = 128;
+      m_nSM_CalcF = 3*128*sizeof(double);
+      m_nSM_CalcSE = 5*136*sizeof(double);
+      break;
+    case 512:
+      m_nGridSize = 4;
+      m_nBlockSize = 128;
+      m_nSM_CalcF = 3*128*sizeof(double);
+      m_nSM_CalcSE = 5*136*sizeof(double);
+      break;
+    case 1024:
+      m_nGridSize = 4;  // Grid size (# of thread blocks)
+      m_nBlockSize = 256; // Block size (# of threads per block)
+      m_nSM_CalcF = 3*256*sizeof(double);
+      m_nSM_CalcSE = 5*264*sizeof(double); // Size of shared memory per block
+      break;
+    case 2048:
+      m_nGridSize = 8;
+      m_nBlockSize = 256;
+      m_nSM_CalcF = 3*256*sizeof(double);
+      m_nSM_CalcSE = 5*264*sizeof(double);
+    default:
+      m_nGridSize = m_nCross / 512;
+      m_nBlockSize = 512;
+      m_nSM_CalcF = 3*512*sizeof(double);
+      m_nSM_CalcSE = 5*520*sizeof(double);
     };
   cout << "Kernel config (cross):\n";
   cout << m_nGridSize << " x " << m_nBlockSize << endl;
@@ -137,10 +166,11 @@ void Cross_Box::construct_defaults()
   cudaMalloc((void**) &d_pdTempPhi, sizeof(double)*m_nCross);
   cudaMalloc((void**) &d_pdXMoved, sizeof(double)*m_nCross);
   cudaMalloc((void**) &d_pdYMoved, sizeof(double)*m_nCross);
+  cudaMalloc((void**) &d_pdArea, sizeof(double)*m_nCross);
   cudaMalloc((void**) &d_pdMOI, sizeof(double)*m_nCross);
   cudaMalloc((void**) &d_pdIsoC, sizeof(double)*m_nCross);
   m_bMOI = 0;
-  m_nDeviceMem += 6*m_nCross*sizeof(double);
+  m_nDeviceMem += 7*m_nCross*sizeof(double);
 #if GOLD_FUNCS == 1
   *g_bNewNbrs = 1;
   g_pdTempX = new double[m_nCross];
@@ -208,7 +238,7 @@ double Cross_Box::calculate_packing()
 
 // Creates the class
 // See cross_box.h for default values of parameters
-Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, double dEpsilon, int nMaxPPC, int nMaxNbrs, Potential ePotential)
+Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, double dKd, double dEpsilon, bool bZeroE, int nMaxPPC, int nMaxNbrs, Potential ePotential)
 {
   assert(nCross > 0);
   m_nCross = nCross;
@@ -222,6 +252,7 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
   m_dRMax = dR;
   m_dAMax = dAx;
   m_dARatio = dAy/dAx;
+  m_dKd = dKd;
   m_nDeviceMem = 0;
 
   // This allocates the coordinate data as page-locked memory, which
@@ -258,7 +289,12 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
 
   construct_defaults();
   cout << "Memory allocated on device (MB): " << (double)m_nDeviceMem / (1024.*1024.) << endl;
-  place_random_cross(0,1);
+  if (bZeroE) {
+    place_random_0e_cross(0,1);
+  }
+  else {
+    place_random_cross(0,1);
+  }
   m_dPacking = calculate_packing();
   cout << "Random crosses placed" << endl;
   //display(0,0,0,0);
@@ -266,12 +302,13 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
 }
 // Create class with coordinate arrays provided
 Cross_Box::Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi, double *pdR, double *pdAx,
-		     double *pdAy, double dEpsilon, int nMaxPPC, int nMaxNbrs, Potential ePotential)
+		     double *pdAy, double dKd, double dEpsilon, int nMaxPPC, int nMaxNbrs, Potential ePotential)
 {
   assert(nCross > 0);
   m_nCross = nCross;
   assert(dL > 0);
   m_dL = dL;
+  m_dKd = dKd;
   m_ePotential = ePotential;
 
   m_dEpsilon = dEpsilon;
@@ -554,15 +591,7 @@ bool Cross_Box::check_for_contacts(int nIndex)
     dDelX += m_dGamma * dDelY;
     double dDelRSqr = dDelX * dDelX + dDelY * dDelY;
     if (dDelRSqr < dS*dS) {
-    	double dDeltaX = dX - dXj;
-    	double dDeltaY = dY - dYj;
     	double dSigma = h_pdR[nIndex] + h_pdR[p];
-
-    	// Make sure we take the closest distance considering boundary conditions
-    	dDeltaX += m_dL * ((dDeltaX < -0.5*m_dL) - (dDeltaX > 0.5*m_dL));
-    	dDeltaY += m_dL * ((dDeltaY < -0.5*m_dL) - (dDeltaY > 0.5*m_dL));
-    	// Transform from shear coordinates to lab coordinates
-    	dDeltaX += m_dGamma * dDeltaX;
 
     	double dPhiAs[2] = {h_pdPhi[nIndex], h_pdPhi[nIndex] + 0.5*D_PI};
     	double dAs[2] = {h_pdAx[nIndex], h_pdAy[nIndex]};
@@ -579,8 +608,8 @@ bool Cross_Box::check_for_contacts(int nIndex)
     			double a = dAs[i] * dAs[i];
     			double b = -(nxA * nxB + nyA * nyB);
     			double c = dBs[j] * dBs[j];
-    			double d = nxA * dDeltaX + nyA * dDeltaY;
-    			double e = -nxB * dDeltaX - nyB * dDeltaY;
+    			double d = nxA * dDelX + nyA * dDelY;
+    			double e = -nxB * dDelX - nyB * dDelY;
     			double delta = a * c - b * b;
 	
     			double t = fmin( fmax( (b*d-a*e)/delta, -1. ), 1. );
@@ -591,8 +620,8 @@ bool Cross_Box::check_for_contacts(int nIndex)
     				t = fmin( fmax( -(b*s+e)/c, -1.), 1.);
 	
     			// Check if they overlap and calculate forces
-    			double dDx = dDeltaX + s*nxA - t*nxB;
-    			double dDy = dDeltaY + s*nyA - t*nyB;
+    			double dDx = dDelX + s*nxA - t*nxB;
+    			double dDy = dDelY + s*nyA - t*nyB;
     			double dDSqr = dDx * dDx + dDy * dDy;
     			if (dDSqr < dSigma*dSigma || dDSqr != dDSqr)
     				return 1;

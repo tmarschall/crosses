@@ -18,7 +18,7 @@ using namespace std;
 const double D_PI = 3.14159265358979;
 
 
-// infinitesimally thin approximation
+// infinitesimally thin approximation -- Not used
 __global__ void find_moi(int nCross, double *pdMOI, double *pdAx, double *pdAy)
 {
   int thid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -33,7 +33,8 @@ __global__ void find_moi(int nCross, double *pdMOI, double *pdAx, double *pdAy)
   }
 }
 
-__global__ void find_rot_consts(int nCross, double *pdMOI, double *pdIsoCoeff, double *pdR, double *pdAx, double *pdAy)
+// Find moment of inertia, particle areas
+__global__ void find_rot_consts(int nCross, double *pdArea, double *pdMOI, double *pdIsoCoeff, double *pdR, double *pdAx, double *pdAy)
 {
   int thid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -45,8 +46,9 @@ __global__ void find_rot_consts(int nCross, double *pdMOI, double *pdIsoCoeff, d
     double dBeta = dAy/dAx;
     
     double dC = 3*D_PI - 8 + 12*dAlpha*(1+dBeta) + 3*D_PI*dAlpha*dAlpha*(1+dBeta*dBeta) + 4*dAlpha*dAlpha*dAlpha*(1+dBeta*dBeta*dBeta);
-    double dB = 2*D_PI*dR*dR + 4*dR*dAx + 4*dR*dAy - 4*dR*dR;
-    pdMOI[thid] = dR*dR*dR*dR*dC/(3*dB);
+    double dArea = 2*D_PI*dR*dR + 4*dR*dAx + 4*dR*dAy - 4*dR*dR;
+    pdArea[thid] = dArea;
+    pdMOI[thid] = dR*dR*dR*dR*dC/(3*dArea);
     pdIsoCoeff[thid] = (4*dAlpha*(1-dBeta) + 3*D_PI*dAlpha*dAlpha*(1-dBeta*dBeta) + 4*dAlpha*dAlpha*dAlpha*(1-dBeta*dBeta*dBeta))/dC;
 
     thid += blockDim.x*gridDim.x;
@@ -238,7 +240,7 @@ void Cross_Box::find_neighbors()
   cudaMemset((void *) d_bNewNbrs, 0, sizeof(int));
 
   if (!m_bMOI)
-    find_rot_consts <<<m_nGridSize, m_nBlockSize>>> (m_nCross, d_pdMOI, d_pdIsoC, d_pdR, d_pdAx, d_pdAy);
+    find_rot_consts <<<m_nGridSize, m_nBlockSize>>> (m_nCross, d_pdArea, d_pdMOI, d_pdIsoC, d_pdR, d_pdAx, d_pdAy);
 
   find_cells <<<m_nGridSize, m_nBlockSize>>>
     (m_nCross, m_nMaxPPC, m_dCellW, m_dCellH, m_nCellCols, m_dL,

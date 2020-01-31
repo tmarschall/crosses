@@ -9,7 +9,7 @@
 #include "cross_box.h"
 #include "cudaErr.h"
 #include <math.h>
-#include <sm_20_atomic_functions.h>
+#include <sm_35_atomic_functions.h>
 #include <stdio.h>
 
 
@@ -41,110 +41,110 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
   int nThreads = blockDim.x * gridDim.x;
   int offset = blockDim.x + 8; // +8 helps to avoid bank conflicts
   for (int i = 0; i < 5; i++)
-    sData[i*offset + thid] = 0.0;
+    sData[3*blockDim.x + i*offset + thid] = 0.0;
   __syncthreads();  // synchronizes every thread in the block before going on
 
-  double *dFx = sData+4*offset;
-  double *dFy = sData+4*offset+blockDim.x;
-  double *dFt = sData+4*offset+2*blockDim.x;
+  double *dFx = sData+4;
+  double *dFy = sData+blockDim.x;
+  double *dFt = sData+2*blockDim.x;
 
   while (nPID < nCross) {
-	  dFx[thid] = 0.0;
-      dFy[thid] = 0.0;
-      dFt[thid] = 0.0;
+    dFx[thid] = 0.0;
+    dFy[thid] = 0.0;
+    dFt[thid] = 0.0;
+    
+    double dX = pdX[nPID];
+    double dY = pdY[nPID];
+    double dPhi = pdPhi[nPID] + D_PI*spi/2;
+    double dR = pdR[nPID];
+    double dA = spi == 0 ? pdAx[nPID] : pdAy[nPID];
+    
+    int nNbrs = pnNPP[nPID];
+    for (int p = 0; p < nNbrs; p++) {
+      int nAdjPID = pnNbrList[nPID + p * nCross];
       
-      double dX = pdX[nPID];
-      double dY = pdY[nPID];
-      double dPhi = pdPhi[nPID] + D_PI*spi/2;
-      double dR = pdR[nPID];
-      double dA = spi == 0 ? pdAx[nPID] : pdAy[nPID];
+      double dDeltaX = dX - pdX[nAdjPID];
+      double dDeltaY = dY - pdY[nAdjPID];
+      double dPhiB = pdPhi[nAdjPID] + D_PI*spj/2;
+      double dSigma = dR + pdR[nAdjPID];
+      double dB = spj == 0 ? pdAx[nPID] : pdAy[nPID];
+      // Make sure we take the closest distance considering boundary conditions
+      dDeltaX += dL * ((dDeltaX < -0.5*dL) - (dDeltaX > 0.5*dL));
+      dDeltaY += dL * ((dDeltaY < -0.5*dL) - (dDeltaY > 0.5*dL));
+      // Transform from shear coordinates to lab coordinates
+      dDeltaX += dGamma * dDeltaY;
       
-      int nNbrs = pnNPP[nPID];
-      for (int p = 0; p < nNbrs; p++) {
-    	  int nAdjPID = pnNbrList[nPID + p * nCross];
+      double nxA = dA * cos(dPhi);
+      double nyA = dA * sin(dPhi);
+      double nxB = dB * cos(dPhiB);
+      double nyB = dB * sin(dPhiB);
+      
+      double a = dA * dA;
+      double b = -(nxA * nxB + nyA * nyB);
+      double c = dB * dB;
+      double d = nxA * dDeltaX + nyA * dDeltaY;
+      double e = -nxB * dDeltaX - nyB * dDeltaY;
+      double delta = a * c - b * b;
+      
+      double t = fmin( fmax( (b*d-a*e)/delta, -1. ), 1. );
+      double s = -(b*t+d)/a;
+      double sarg = fabs(s);
+      s = fmin( fmax(s,-1.), 1. );
+      if (sarg > 1)
+	t = fmin( fmax( -(b*s+e)/c, -1.), 1.);
+      
+      // Check if they overlap and calculate forces
+      double dDx = dDeltaX + s*nxA - t*nxB;
+      double dDy = dDeltaY + s*nyA - t*nyB;
+      double dDSqr = dDx * dDx + dDy * dDy;
+      if (dDSqr < dSigma*dSigma) {
+	double dDij = sqrt(dDSqr);
+	double dDVij;
+	double dAlpha;
+	if (ePot == HARMONIC) {
+	  dDVij = (1.0 - dDij / dSigma) / dSigma;
+	  dAlpha = 2.0;
+	}
+	else if (ePot == HERTZIAN) {
+	  dDVij = (1.0 - dDij / dSigma) * sqrt(1.0 - dDij / dSigma) / dSigma;
+	  dAlpha = 2.5;
+	}
+	double dPfx = dDx * dDVij / dDij;
+	double dPfy = dDy * dDVij / dDij;
+	dFx[thid] += dPfx;
+	dFy[thid] += dPfy;
+	double dCx = s*nxA - 0.5*dDx;
+	double dCy = s*nyA - 0.5*dDy + s*nyA;
+	dFt[thid] += dCx * dPfy - dCy * dPfx;
+	sData[3*blockDim.x + thid] += dPfx * dCx / (dL * dL);
+	sData[3*blockDim.x + thid + offset] += dPfy * dCx / (dL * dL);
+	sData[3*blockDim.x + thid + 2*offset] += dPfx * dCy / (dL * dL);
+	sData[3*blockDim.x + thid + 3*offset] += dPfy * dCy / (dL * dL);
+	if (nAdjPID > nPID) {
+	  sData[3*blockDim.x + thid + 4*offset] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
 	  
-    	  double dDeltaX = dX - pdX[nAdjPID];
-    	  double dDeltaY = dY - pdY[nAdjPID];
-    	  double dPhiB = pdPhi[nAdjPID] + D_PI*spj/2;
-    	  double dSigma = dR + pdR[nAdjPID];
-    	  double dB = spj == 0 ? pdAx[nPID] : pdAy[nPID];
-    	  // Make sure we take the closest distance considering boundary conditions
-    	  dDeltaX += dL * ((dDeltaX < -0.5*dL) - (dDeltaX > 0.5*dL));
-    	  dDeltaY += dL * ((dDeltaY < -0.5*dL) - (dDeltaY > 0.5*dL));
-    	  // Transform from shear coordinates to lab coordinates
-    	  dDeltaX += dGamma * dDeltaY;
-
-    	  double nxA = dA * cos(dPhi);
-    	  double nyA = dA * sin(dPhi);
-    	  double nxB = dB * cos(dPhiB);
-    	  double nyB = dB * sin(dPhiB);
-
-    	  double a = dA * dA;
-    	  double b = -(nxA * nxB + nyA * nyB);
-    	  double c = dB * dB;
-    	  double d = nxA * dDeltaX + nyA * dDeltaY;
-    	  double e = -nxB * dDeltaX - nyB * dDeltaY;
-    	  double delta = a * c - b * b;
-
-    	  double t = fmin( fmax( (b*d-a*e)/delta, -1. ), 1. );
-    	  double s = -(b*t+d)/a;
-    	  double sarg = fabs(s);
-    	  s = fmin( fmax(s,-1.), 1. );
-    	  if (sarg > 1)
-    		  t = fmin( fmax( -(b*s+e)/c, -1.), 1.);
-	  
-    	  // Check if they overlap and calculate forces
-    	  double dDx = dDeltaX + s*nxA - t*nxB;
-    	  double dDy = dDeltaY + s*nyA - t*nyB;
-    	  double dDSqr = dDx * dDx + dDy * dDy;
-    	  if (dDSqr < dSigma*dSigma) {
-    		  double dDij = sqrt(dDSqr);
-    		  double dDVij;
-    		  double dAlpha;
-    		  if (ePot == HARMONIC) {
-    			  dDVij = (1.0 - dDij / dSigma) / dSigma;
-    			  dAlpha = 2.0;
-    		  }
-    		  else if (ePot == HERTZIAN) {
-    			  dDVij = (1.0 - dDij / dSigma) * sqrt(1.0 - dDij / dSigma) / dSigma;
-    			  dAlpha = 2.5;
-    		  }
-    		  double dPfx = dDx * dDVij / dDij;
-    		  double dPfy = dDy * dDVij / dDij;
-    		  dFx[thid] += dPfx;
-    		  dFy[thid] += dPfy;
-    		  dFt[thid] += s*nxA * dPfy - s*nyA * dPfx;
-		  double dCx = 0.5*dDx - s*nxA;
-		  double dCy = 0.5*dDy - s*nyA;
-		  sData[thid] += dPfx * dCx / (dL * dL);
-		  sData[thid + offset] += dPfy * dCx / (dL * dL);
-		  sData[thid + 2*offset] += dPfx * dCy / (dL * dL);
-		  sData[thid + 3*offset] += dPfy * dCy / (dL * dL);
-    		  if (nAdjPID > nPID) {
-		    sData[thid + 4*offset] += dDVij * dSigma * (1.0 - dDij / dSigma) / (dAlpha * dL * dL);
-		    
-    		  }
-    	  }
+	}
       }
-      if (spi == 0) {
-    	 dFx[thid] += dFx[thid + 2];
-    	 dFy[thid] += dFy[thid + 2];
-    	 dFt[thid] += dFt[thid + 2];
-    	 if (spj == 0) {
-    		 pdFx[nPID] = dFx[thid] + dFx[thid + 1];
-    		 pdFy[nPID] = dFy[thid] + dFy[thid + 1];
-    		 pdFt[nPID] = dFt[thid] + dFt[thid + 1];
-    	 }
+    }
+    if (spi == 0) {
+      dFx[thid] += dFx[thid + 2];
+      dFy[thid] += dFy[thid + 2];
+      dFt[thid] += dFt[thid + 2];
+      if (spj == 0) {
+	pdFx[nPID] = dFx[thid] + dFx[thid + 1];
+	pdFy[nPID] = dFy[thid] + dFy[thid + 1];
+	pdFt[nPID] = dFt[thid] + dFt[thid + 1];
       }
-      
-      nPID += nThreads/4;
+    }
+    
+    nPID += nThreads/4;
   }
   __syncthreads();
   
   // Now we do a parallel reduction sum to find the total number of contacts
   // Now we do a parallel reduction sum to find the total number of contacts
   int stride = blockDim.x / 2;  // stride is 1/2 block size, all threads perform two adds
-  int base = thid % stride + offset * (thid / stride);
+  int base = 3*blockDim.x + thid % stride + offset * (thid / stride);
   sData[base] += sData[base + stride];
   base += 2*offset;
   sData[base] += sData[base + stride];
@@ -154,7 +154,7 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
   }
   stride /= 2; // stride is 1/4 block size, all threads perform 1 add
   __syncthreads();
-  base = thid % stride + offset * (thid / stride);
+  base = 3*blockDim.x + thid % stride + offset * (thid / stride);
   sData[base] += sData[base + stride];
   if (thid < stride) {
     base += 4*offset;
@@ -163,23 +163,23 @@ __global__ void calc_se(int nCross, int *pnNPP, int *pnNbrList, double dL,
   stride /= 2;
   __syncthreads();
   while (stride > 6) {
-      if (thid < 5 * stride) {
-    	  base = thid % stride + offset * (thid / stride);
-    	  sData[base] += sData[base + stride];
-      }
-      stride /= 2;  
-      __syncthreads();
+    if (thid < 5 * stride) {
+      base = 3*blockDim.x + thid % stride + offset * (thid / stride);
+      sData[base] += sData[base + stride];
+    }
+    stride /= 2;  
+    __syncthreads();
   }
   
   if (thid < 20) {
-    base = thid % 4 + offset * (thid / 4);
+    base = 3*blockDim.x + thid % 4 + offset * (thid / 4);
     sData[base] += sData[base + 4];
     if (thid < 10) {
-      base = thid % 2 + offset * (thid / 2);
+      base = 3*blockDim.x + thid % 2 + offset * (thid / 2);
       sData[base] += sData[base + 2];
       if (thid < 5) {
-	sData[thid * offset] += sData[thid * offset + 1];
-	float tot = atomicAdd(pfSE+thid, (float)sData[thid*offset]);
+	sData[3*blockDim.x + thid * offset] += sData[3*blockDim.x + thid * offset + 1];
+	float tot = atomicAdd(pfSE+thid, (float)sData[3*blockDim.x + thid*offset]);
       }
     }
   }
@@ -209,6 +209,9 @@ void Cross_Box::calculate_stress_energy()
     }
   cudaThreadSynchronize();
   checkCudaError("Calculating stresses and energy");
+
+  cudaMemcpyAsync(h_pfSE, d_pfSE, 5*sizeof(float), cudaMemcpyDeviceToHost);
+  cudaThreadSynchronize();
 }
 
 

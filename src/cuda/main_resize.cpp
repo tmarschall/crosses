@@ -103,6 +103,7 @@ int main(int argc, char* argv[])
   double dTotalGamma;
   long unsigned int nTime = 0;
   double dPacking;
+  double dKd;
   if (strFile == "r")
   {
     double dPacking = float_input(argc, argv, ++argn, "Packing Fraction");
@@ -114,6 +115,7 @@ int main(int argc, char* argv[])
     dAy = float_input(argc, argv, ++argn, "Half-shaft length (short axis)");
     cout << dAy << endl;
     double dArea = nCross*(4*dAx + 4*dAy + 2*D_PI*dR - 4*dR)*dR;
+    dKd = nCross/dArea;
     dL = sqrt(dArea / dPacking);
     cout << "Box length L: " << dL << endl;
     /*
@@ -146,6 +148,15 @@ int main(int argc, char* argv[])
     cData.getColumn(pdAx, 4);
     cData.getColumn(pdAy, 5);
     
+    double dRmin = pdR[0];
+    double dAreaMin = (4*pdAx[0] + 4*pdAy[0] + 2*D_PI*pdR[0] - 4*pdR[0])*pdR[0];
+    for  (int i = 1; i < nCross; i++) {
+      if (pdR[i] < dRmin) {
+	dRmin = pdR[i];
+	dAreaMin = (4*pdAx[i] + 4*pdAy[i] + 2*D_PI*pdR[i] - 4*pdR[i])*pdR[i];
+      }
+    }
+    dKd = 1/dAreaMin;
     dL = cData.getHeadFloat(1);
     dPacking = cData.getHeadFloat(2);
     dGamma = cData.getHeadFloat(3);
@@ -163,11 +174,11 @@ int main(int argc, char* argv[])
   Cross_Box *cCross;
   if (strFile == "r") {
     cout << "Initializing box of length " << dL << " with " << nCross << " particles.";
-    cCross = new Cross_Box(nCross, dL, dR, dAx, dAy, dDR, 1);
+    cCross = new Cross_Box(nCross, dL, dR, dAx, dAy, dKd, dDR, 1);
   }
   else {
     cout << "Initializing box from file of length " << dL << " with " << nCross << " particles.";
-    cCross = new Cross_Box(nCross, dL, pdX, pdY, pdPhi, pdR, pdAx, pdAy, dDR);
+    cCross = new Cross_Box(nCross, dL, pdX, pdY, pdPhi, pdR, pdAx, pdAy, dKd, dDR);
   }
   cout << "Cross initialized" << endl;
 

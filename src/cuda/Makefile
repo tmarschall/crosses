@@ -3,7 +3,7 @@ CXX=g++
 NVCC=nvcc
 
 # paths of cuda libraries
-CUDAPATH=/software/cuda/5.5/b1
+CUDAPATH=/software/cuda/10.0.130/usr/local/cuda-10.0/
 # for cudpp:
 #CUDASDKPATH=/usr/local/cuda/SDK/NVIDIA_GPU_Computing_SDK/C
 
@@ -23,13 +23,13 @@ NVCCOBJECTS=find_neighbors.o calculate_stress_energy.o data_primitives_2.o strai
 
 # final executable
 EXE=../../exe/cross_box
-#PROF_EXE=../../exe/cross_box_profile
+RSZ_EXE=../../exe/cross_box_resize
 
 #rules:
 
-all: $(EXE) $(PROF_EXE)
+all: $(EXE) $(RSZ_EXE)
 strain: $(EXE)
-#prof: $(PROF_EXE)
+resz: $(RSZ_EXE)
 
 ######################
 # compile executable #
@@ -38,8 +38,9 @@ strain: $(EXE)
 $(EXE): $(CXXOBJECTS) $(NVCCOBJECTS) main.o
 	$(CXX) -o $(EXE) main.o $(CXXOBJECTS) $(NVCCOBJECTS) $(LDFLAGS)
 
-$(PROF_EXE): $(CXXOBJECTS) $(NVCCOBJECTS) main_profile.o
-	$(CXX) -o $(PROF_EXE) main_profile.o $(CXXOBJECTS) $(NVCCOBJECTS) $(LDFLAGS)
+$(RSZ_EXE): $(CXXOBJECTS) $(NVCCOBJECTS) main_resize.o
+	$(CXX) -o $(RSZ_EXE) main_resize.o $(CXXOBJECTS) $(NVCCOBJECTS) $(LDFLAGS)
+
 
 ###################
 # compile objects #
@@ -49,8 +50,8 @@ $(PROF_EXE): $(CXXOBJECTS) $(NVCCOBJECTS) main_profile.o
 main.o: main.cpp cross_box.h
 	$(CXX) $(CXXFLAGS) $(CXXINCLUDE) -c main.cpp
 
-#main_profile.o: main_profile.cpp cross_box.h
-#	$(CXX) $(CXXFLAGS) $(CXXINCLUDE) -c main_profile.cpp
+main_resize.o: main_resize.cpp cross_box.h
+	$(CXX) $(CXXFLAGS) $(CXXINCLUDE) -c main_resize.cpp
 
 cross_box.o: cross_box.cpp cross_box.h
 	$(CXX) $(CXXFLAGS) $(CXXINCLUDE) -c cross_box.cpp

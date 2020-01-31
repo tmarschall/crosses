@@ -1,24 +1,28 @@
-The programs spherocyl_strain and spherocyl_resize can both take user input through the command line arguments or using an input file and input redirection ( < ), ie:
+The programs "cross_box" and "cross_box_resize" can both take user input through the command line arguments, ie:
 
-./spherocyl_strain < input_file.txt
+./cross_box arg1 arg2 arg3 ...
 
-where input_file.txt is a list of arguments, each on it's own line
+or using an input file and input redirection ( < ), ie:
 
-The order of the arguments for spherocyl_strain are:
+./cross_box < input_file.txt
+
+where "input_file.txt" is a list of arguments, each on it's own line
+
+The order of the arguments for cross_box are:
 
 1) A position data file to load (or "r" to start from a new random configuration (text)
 2) The output directory to save data (text)
-3) The number of spherocylinders (integer)
+3) The number of crosses (integer)
 4) The strain rate (float)
 5) The integration step size (float)
 6) The length of the run in terms of the strain parameter gamma (float)
 7) How often to save position data files (in terms of gamma) (float)
 8) How often to save the stress tensor components and energy (float)
 9) A padding number which determines how often new neighbor lists need to be generated (too small or too big and the program may run slow, I usually use around 0.1)
-10) The packing fraction (only necessary when using a random configuration)
-11) The cross radius (only necessary when using a random configuration)
-12) The cross long axis length (only necessary when using a random configuration)
-13) The cross short axis length
+10) The packing fraction (float) (only necessary when using a random configuration)
+11) The cross radius (float) (only necessary when using a random configuration)
+12) The cross long axis length (float) (only necessary when using a random configuration)
+13) The cross short axis length (float) (only necessary when using a random configuration)
 
 
 The arguments for spherocyl_resize are the same except:
