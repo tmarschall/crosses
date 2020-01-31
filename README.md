@@ -21,12 +21,12 @@ Setting the first command line argument to "r" will generate a new random config
 
 The directory in which the output will be saved and the frequency at which configuration files and stress/energy files are saved can be set through the command line arguments at runtime.
 
-By default, configuration files will be saved as space-separated data in the specified directory with the name "sd<time>.dat" where <time> gives the time from the start of the simulation of each saved configuration.
+By default, configuration files will be saved as space-separated data in the specified directory with the name "sd(time).dat" where (time) gives the time from the start of the simulation of each saved configuration.
 
 The first line of each configuration file gives a set of parameters which are: 
-<The number of particles> <The length of the box> <The packing fraction> <The current strain coordinate> <The total strain coordinate> <The strain rate> <The time step>
+(The number of particles) (The length of the box) (The packing fraction) (The current strain coordinate) (The total strain coordinate) (The strain rate) (The time step)
 The following lines give the positions and orientations of each particle as:
-<x coordinate> <y coordinate> <theta orientation> <radius> <Long-axis half-shaft length> <Short-axis half-shaft length>
+(x coordinate) (y coordinate) (theta orientation) (radius) (Long-axis half-shaft length) (Short-axis half-shaft length)
 
 The elastic stress and energy data is also saved in a file "sd_stress_energy.dat".  Each line of the file gives the energy and stresses at a given time in the simulation. The numbers in each line are then:
-<time> <energy> <p> <pxx> <pxy> <pyx> <pyy>.
+(time) (energy) (p) (pxx) (pxy) (pyx) (pyy).
