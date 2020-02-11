@@ -1,0 +1,32 @@
+There are two types of output files.  
+
+The first is a time series of the stress tensor and energy, with default file name "sd_stress_energy.dat".  The space-separated columns of this file are as follows:
+
+1) Time (int)
+2) Elastic energy (float)
+3) Total elastic pressure p=(p_xx+p_yy)/2 (float)
+4) Elastic p_xx (float)
+5) Elastic p_xy (float)
+6) Elastic p_yx (float)
+7) Elastic p_yy (float)
+
+The other files are configurations and follow the file name pattern "sd<time>.dat" where <time> is a 10 digit number corresponding to the time coordinate of the simulation.  The file has a header which contains the following space-separated quantities:
+
+1) Number of particles (int)
+2) Length of the system (float)
+3) Packing fraction (float)
+4) Current gamma coordinate (range -0.5 to 0.5) (float)
+5) Total gamma since the start of run (range 0 to unlimited) (float)
+6) The strain rate (float)
+7) The integration time step (float)
+
+The following rows then contain the coordinates of each particle, with columns as follows:
+
+1) x (float)
+2) y (float)
+3) theta (float)
+4) Radius (float)
+5) Half-shaft length (long-axis) (float)
+6) Half-shaft length (short-axis) (float)
+
+
