@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
   Cross_Box *cCross;
   if (strFile == "r") {
     cout << "Initializing box of length " << dL << " with " << nCross << " particles.";
-    cCross = new Cross_Box(nCross, dL, dR, dAx, dAy, dKd, dDR, 1);
+    cCross = new Cross_Box(nCross, dL, dR, dAx, dAy, dKd, 1.0, dDR, 1);
   }
   else {
     cout << "Initializing box from file of length " << dL << " with " << nCross << " particles.";
