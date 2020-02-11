@@ -13,4 +13,4 @@
 module load cuda
 
 mkdir -p /scratch/$USER/cross/test/shear/
-srun ~/crosses/exe/cross_box r /scratch/$USER/cross/test/shear/ 1024 1e-5 0.02 10.0 0.01 0.00002 0.08 0.80 0.5 2.0 1.0
+srun ~/crosses/exe/cross_box r /scratch/$USER/cross/test/shear/ 1024 1e-5 0.02 10.0 0.01 0.00002 0.08 0.80 0.5 2.0 1.0 1.4

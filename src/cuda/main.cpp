@@ -104,6 +104,7 @@ int main(int argc, char* argv[])
   long unsigned int nTime = 0;
   double dPacking;
   double dKd = 1;
+  double dBidispersity;
   if (strFile == "r")
   {
     double dPacking = float_input(argc, argv, ++argn, "Packing Fraction");
@@ -114,10 +115,12 @@ int main(int argc, char* argv[])
     cout << dAx << endl;
     dAy = float_input(argc, argv, ++argn, "Half-shaft length (short axis)");
     cout << dAy << endl;
-    double dArea = nCross*(4*dAx + 4*dAy + 2*D_PI*dR - 4*dR)*dR;
-    dKd = nCross/dArea;
+    dBidispersity = float_input(argc, argv, ++ argn, "Size bidispersity ratio");
+    cout << dBidispersity << endl;
+    double dArea = nCross*(1+dBidispersity)*(2*dAx + 2*dAy + D_PI*dR - 2*dR)*dR;  // Total particle area
     dL = sqrt(dArea / dPacking);
     cout << "Box length L: " << dL << endl;
+    dKd = 1./(dR*(4*dAx + 4*dAy + 2*D_PI*dR - 4*dR));  // disspipative constant: 1/A_s
     /*
     srand(time(0) + static_cast<int>(1000*dPacking));
     for (int p = 0; p < nCross; p++)
@@ -179,7 +182,7 @@ int main(int argc, char* argv[])
   Cross_Box *cCross;
   if (strFile == "r") {
     cout << "Initializing box of length " << dL << " with " << nCross << " particles.";
-    cCross = new Cross_Box(nCross, dL, dR, dAx, dAy, dKd, dDR);
+    cCross = new Cross_Box(nCross, dL, dR, dAx, dAy, dKd, dBidispersity, dDR);
   }
   else {
     cout << "Initializing box from file of length " << dL << " with " << nCross << " particles.";

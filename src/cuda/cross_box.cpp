@@ -238,7 +238,8 @@ double Cross_Box::calculate_packing()
 
 // Creates the class
 // See cross_box.h for default values of parameters
-Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, double dKd, double dEpsilon, bool bZeroE, int nMaxPPC, int nMaxNbrs, Potential ePotential)
+Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, double dKd, double dBidispersity, 
+		     double dEpsilon, bool bZeroE, int nMaxPPC, int nMaxNbrs, Potential ePotential)
 {
   assert(nCross > 0);
   m_nCross = nCross;
@@ -249,8 +250,8 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
   m_dEpsilon = dEpsilon;
   m_nMaxPPC = nMaxPPC;
   m_nMaxNbrs = nMaxNbrs;
-  m_dRMax = dR;
-  m_dAMax = dAx;
+  m_dRMax = dBidispersity*dR;
+  m_dAMax = dBidispersity*dAx;
   m_dARatio = dAy/dAx;
   m_dKd = dKd;
   m_nDeviceMem = 0;
@@ -290,10 +291,10 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
   construct_defaults();
   cout << "Memory allocated on device (MB): " << (double)m_nDeviceMem / (1024.*1024.) << endl;
   if (bZeroE) {
-    place_random_0e_cross(0,1);
+    place_random_0e_cross(0,1,dBidispersity);
   }
   else {
-    place_random_cross(0,1);
+    place_random_cross(0,1,dBidispersity);
   }
   m_dPacking = calculate_packing();
   cout << "Random crosses placed" << endl;
@@ -301,8 +302,8 @@ Cross_Box::Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, d
   
 }
 // Create class with coordinate arrays provided
-Cross_Box::Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi, double *pdR, double *pdAx,
-		     double *pdAy, double dKd, double dEpsilon, int nMaxPPC, int nMaxNbrs, Potential ePotential)
+Cross_Box::Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi, double *pdR, double *pdAx, double *pdAy,
+		     double dKd, double dEpsilon, int nMaxPPC, int nMaxNbrs, Potential ePotential)
 {
   assert(nCross > 0);
   m_nCross = nCross;
@@ -693,14 +694,15 @@ bool Cross_Box::check_for_intersection(int nIndex, double dEpsilon)
   return 0;
 }
 
-void Cross_Box::place_random_0e_cross(int seed, bool bRandAngle)
+void Cross_Box::place_random_0e_cross(int seed, bool bRandAngle, double dBidispersity)
 {
   srand(time(0) + seed);
 
   for (int p = 0; p < m_nCross; p++) {
-    h_pdR[p] = m_dRMax;
-    h_pdAx[p] = m_dAMax;
-    h_pdAy[p] = m_dARatio*m_dAMax;
+    double dSzRatio = dBidispersity * (p % 2 == 1) + float(p % 2 == 0);
+    h_pdR[p] = m_dRMax / dSzRatio;
+    h_pdAx[p] = m_dAMax / dSzRatio;
+    h_pdAy[p] = m_dARatio*m_dAMax / dSzRatio;
     h_pnMemID[p] = p;
   }
   cudaMemcpy(d_pdR, h_pdR, sizeof(double)*m_nCross, cudaMemcpyHostToDevice);
@@ -742,14 +744,15 @@ void Cross_Box::place_random_0e_cross(int seed, bool bRandAngle)
 
 }
 
-void Cross_Box::place_random_cross(int seed, bool bRandAngle)
+void Cross_Box::place_random_cross(int seed, bool bRandAngle, double dBidispersity)
 {
   srand(time(0) + seed);
 
   for (int p = 0; p < m_nCross; p++) {
-    h_pdR[p] = m_dRMax;
-    h_pdAx[p] = m_dAMax;
-    h_pdAy[p] = m_dARatio*m_dAMax;
+    double dSzRatio = dBidispersity * (p % 2 == 1) + float(p % 2 == 0);
+    h_pdR[p] = m_dRMax / dSzRatio;
+    h_pdAx[p] = m_dAMax / dSzRatio;
+    h_pdAy[p] = m_dARatio*m_dAMax / dSzRatio;
     h_pnMemID[p] = p;
   }
   cudaMemcpy(d_pdR, h_pdR, sizeof(double)*m_nCross, cudaMemcpyHostToDevice);

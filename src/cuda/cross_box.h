@@ -163,15 +163,15 @@ class Cross_Box
   void resize_step(double dResizeRate, long unsigned int nTime, bool bSvStress = 0, bool bSvPos = 0);
 
  public:
-  Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, double dKd, double dEpsilon = 0.1, 
-	    bool bZeroE = 0, int nMaxPPC = 10, int nMaxNbrs = 25, Potential ePotential = HARMONIC);
+  Cross_Box(int nCross, double dL, double dR, double dAx, double dAy, double dKd, double dBidispersity = 1, 
+	    double dEpsilon = 0.1, bool bZeroE = 0, int nMaxPPC = 10, int nMaxNbrs = 25, Potential ePotential = HARMONIC);
   Cross_Box(int nCross, double dL, double *pdX, double *pdY, double *pdPhi, 
 	    double *pdR, double *pdAx, double *pdAy, double dKd, double dEpsilon = 0.1, 
 	    int nMaxPPC = 10, int nMaxNbrs = 25, Potential ePotential = HARMONIC);
   ~Cross_Box();
 
-  void place_random_cross(int seed = 0, bool bRandAngle = 1);
-  void place_random_0e_cross(int seed = 0, bool bRandAngle = 1);
+  void place_random_cross(int seed = 0, bool bRandAngle = 1, double dBidispersity = 1);
+  void place_random_0e_cross(int seed = 0, bool bRandAngle = 1, double dBidispersity = 1);
   void find_neighbors();
   void set_back_gamma();
   void reorder_particles();

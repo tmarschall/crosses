@@ -20,9 +20,10 @@ The order of the arguments for cross_box are:
 8) How often to save the stress tensor components and energy (float)
 9) A padding number which determines how often new neighbor lists need to be generated (too small or too big and the program may run slow, I usually use around 0.1)
 10) The packing fraction (float) (only necessary when using a random configuration)
-11) The cross radius (float) (only necessary when using a random configuration)
+11) The cross radius for a small particle (float) (only necessary when using a random configuration)
 12) The cross long axis length (float) (only necessary when using a random configuration)
 13) The cross short axis length (float) (only necessary when using a random configuration)
+14) The ratio of big to small particles (typically 1.4 - use 1.0 for a monodisperse system) (float)
 
 
 The arguments for spherocyl_resize are the same except:
